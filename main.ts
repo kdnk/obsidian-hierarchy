@@ -34,8 +34,8 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	async refresh() {
-		await this.setBacklinkTitle();
 		this.setTabTitle();
+		await this.setBacklinkTitle();
 	}
 
 	async loadSettings() {
@@ -50,28 +50,30 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	setTabTitle() {
-		if (!this.settings.fullPathForTabs) return;
-
 		const { tabHeaderEls, children } = this.app.workspace
 			.activeTabGroup as unknown as {
 			tabHeaderEls: HTMLElement[];
 			children: { view: { file: TFile } }[];
 		};
 
+		console.log(`[main.ts:59] tabHeaderEls: `, tabHeaderEls);
+
 		for (const [index, tabHeaderEl] of tabHeaderEls.entries()) {
 			const titleEl = tabHeaderEl.querySelector(
 				".workspace-tab-header-inner-title",
 			) as HTMLElement;
 			if (titleEl) {
-				titleEl.textContent =
-					children[index].view.file.path.split(".")[0];
+				if (this.settings.fullPathForTabs) {
+					titleEl.textContent =
+						children[index].view.file.path.split(".")[0];
+				} else {
+					titleEl.textContent = children[index].view.file.basename;
+				}
 			}
 		}
 	}
 
 	async setBacklinkTitle(loopCount = 0) {
-		if (!this.settings.fullPathForBacklinks) return;
-
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
@@ -79,7 +81,6 @@ export default class FullPathPlugin extends Plugin {
 			const backlinks = leaf.view.backlinks as unknown as {
 				recomputeBacklink: (file: FileView) => void;
 				file: FileView;
-				backlinkQueue: { runnable: { running: boolean } };
 				backlinkDom: {
 					vChildren: {
 						children: {
@@ -88,7 +89,7 @@ export default class FullPathPlugin extends Plugin {
 									find: (selector: string) => HTMLElement;
 								};
 							};
-							file: { path: string };
+							file: TFile;
 							result: { content: unknown[] };
 						}[];
 					};
@@ -115,7 +116,11 @@ export default class FullPathPlugin extends Plugin {
 					const titleEl =
 						child.el.firstChild.find(".tree-item-inner");
 					if (titleEl) {
-						titleEl.textContent = child.file.path.split(".")[0];
+						if (this.settings.fullPathForBacklinks) {
+							titleEl.textContent = child.file.path.split(".")[0];
+						} else {
+							titleEl.textContent = child.file.basename;
+						}
 					}
 				}
 			};
