@@ -8,16 +8,16 @@ export default class FullPathPlugin extends Plugin {
 	async onload() {
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				await this.setPaneTitles();
+				await this.setBacklinkTitle();
 			}),
 		);
 
 		this.app.workspace.onLayoutReady(async () => {
-			await this.setPaneTitles();
+			await this.setBacklinkTitle();
 		});
 	}
 
-	async setPaneTitles(loopCount = 0) {
+	async setBacklinkTitle(loopCount = 0) {
 		console.log(`[main.ts:21] loopCount: `, loopCount);
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
@@ -69,7 +69,7 @@ export default class FullPathPlugin extends Plugin {
 			if (backlinkCountCalulated < backlinkCountFromCache) {
 				if (loopCount < 50) {
 					await sleep(100);
-					await this.setPaneTitles(loopCount + 1);
+					await this.setBacklinkTitle(loopCount + 1);
 				} else {
 					renderFullPath();
 				}
