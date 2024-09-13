@@ -24,6 +24,9 @@ export class FullPathSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Full path for backlinks")
+			.setDesc(
+				"Enable this setting to display the full path of the file in the backlinks panel.",
+			)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.fullPathForBacklinks)
@@ -36,6 +39,9 @@ export class FullPathSettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Full path for tabs")
+			.setDesc(
+				"Enable this setting to display the full path of the file in the tab headers.",
+			)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.fullPathForTabs)
