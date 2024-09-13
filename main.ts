@@ -56,13 +56,8 @@ export default class FullPathPlugin extends Plugin {
 					(acc, child) => acc + child.result.content.length,
 					0,
 				);
-			if (
-				loopCount < 50 &&
-				backlinkCountCalulated < backlinkCountFromCache
-			) {
-				await sleep(100);
-				await this.setPaneTitles(loopCount + 1);
-			} else {
+
+			const renderFullPath = () => {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
 					const titleEl =
 						child.el.firstChild.find(".tree-item-inner");
@@ -70,6 +65,16 @@ export default class FullPathPlugin extends Plugin {
 						titleEl.textContent = child.file.path.split(".")[0];
 					}
 				}
+			};
+			if (backlinkCountCalulated < backlinkCountFromCache) {
+				if (loopCount < 50) {
+					await sleep(100);
+					await this.setPaneTitles(loopCount + 1);
+				} else {
+					renderFullPath();
+				}
+			} else {
+				renderFullPath();
 			}
 		}
 	}
