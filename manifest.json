@@ -4,8 +4,6 @@
 	"version": "0.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Display the full path instead of just the file name",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"author": "Kodai Nakamura",
 	"isDesktopOnly": false
 }
