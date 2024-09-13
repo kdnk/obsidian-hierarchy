@@ -1,4 +1,4 @@
-import { App, MarkdownView, Plugin, PluginManifest } from "obsidian";
+import { App, FileView, MarkdownView, Plugin, PluginManifest } from "obsidian";
 
 export default class FullPathPlugin extends Plugin {
 	constructor(app: App, pluginManifest: PluginManifest) {
@@ -17,28 +17,51 @@ export default class FullPathPlugin extends Plugin {
 		});
 	}
 
-	async setPaneTitles() {
-		await Promise.all(
-			this.app.workspace.getLeavesOfType("markdown").map(async (leaf) => {
-				if (!(leaf.view instanceof MarkdownView)) return;
+	async setPaneTitles(loopCount = 0) {
+		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
+		for (const leaf of markdownLeaves) {
+			if (!(leaf.view instanceof MarkdownView)) return;
 
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				const backlinks = leaf.view.backlinks as any;
-
-				backlinks.recomputeBacklink(backlinks.file);
-
-				const sleep = (msec: number) => {
-					return new Promise((resolve) => setTimeout(resolve, msec));
+			const backlinks = leaf.view.backlinks as unknown as {
+				recomputeBacklink: (file: FileView) => void;
+				file: FileView;
+				backlinkQueue: { runnable: { running: boolean } };
+				backlinkDom: {
+					vChildren: {
+						children: {
+							el: {
+								firstChild: {
+									find: (selector: string) => HTMLElement;
+								};
+							};
+							file: { path: string };
+							result: { content: unknown[] };
+						}[];
+					};
 				};
-				for (let x = 0; x < 20; x++) {
-					if (backlinks.backlinkQueue.runnable.running) {
-						await sleep(100);
-					} else {
-						break;
-					}
-				}
-				await sleep(7000);
+			};
 
+			const sleep = (msec: number) => {
+				return new Promise((resolve) => setTimeout(resolve, msec));
+			};
+
+			const currentFile = this.app.workspace.getActiveFile();
+			if (!currentFile) return;
+			const backlinkCountFromCache = this.app.metadataCache
+				.getBacklinksForFile(currentFile)
+				.count();
+			const backlinkCountCalulated =
+				backlinks.backlinkDom.vChildren.children.reduce(
+					(acc, child) => acc + child.result.content.length,
+					0,
+				);
+			if (
+				loopCount < 10 &&
+				backlinkCountCalulated < backlinkCountFromCache
+			) {
+				await sleep(500);
+				await this.setPaneTitles(loopCount + 1);
+			} else {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
 					const titleEl =
 						child.el.firstChild.find(".tree-item-inner");
@@ -46,7 +69,7 @@ export default class FullPathPlugin extends Plugin {
 						titleEl.textContent = child.file.path.split(".")[0];
 					}
 				}
-			}),
-		);
+			}
+		}
 	}
 }
