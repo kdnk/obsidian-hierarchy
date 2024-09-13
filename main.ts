@@ -6,27 +6,52 @@ import {
 	PluginManifest,
 	TFile,
 } from "obsidian";
+import {
+	DEFAULT_SETTINGS,
+	FullPathSettings,
+	FullPathSettingsTab,
+} from "./settings";
 
 export default class FullPathPlugin extends Plugin {
+	settings: FullPathSettings;
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
 	}
 
 	async onload() {
+		this.loadSettings();
+		this.addSettingTab(new FullPathSettingsTab(this.app, this));
+
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				await this.setBacklinkTitle();
-				this.setTabTitle();
+				this.refresh();
 			}),
 		);
 
 		this.app.workspace.onLayoutReady(async () => {
-			await this.setBacklinkTitle();
-			this.setTabTitle();
+			this.refresh();
 		});
 	}
 
+	async refresh() {
+		await this.setBacklinkTitle();
+		this.setTabTitle();
+	}
+
+	async loadSettings() {
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...(await this.loadData()),
+		};
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
+	}
+
 	setTabTitle() {
+		if (!this.settings.fullPathForTabs) return;
+
 		const { tabHeaderEls, children } = this.app.workspace
 			.activeTabGroup as unknown as {
 			tabHeaderEls: HTMLElement[];
@@ -45,6 +70,8 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	async setBacklinkTitle(loopCount = 0) {
+		if (!this.settings.fullPathForBacklinks) return;
+
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
