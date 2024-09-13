@@ -19,7 +19,7 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	async onload() {
-		this.loadSettings();
+		await this.loadSettings();
 		this.addSettingTab(new FullPathSettingsTab(this.app, this));
 
 		this.registerEvent(
