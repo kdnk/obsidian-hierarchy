@@ -24,13 +24,19 @@ export default class FullPathPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				this.refresh();
+				await this.refresh();
 			}),
 		);
 
 		this.app.workspace.onLayoutReady(async () => {
-			this.refresh();
+			await this.refresh();
 		});
+	}
+
+	async onunload() {
+		this.settings.fullPathForTabs = false;
+		this.settings.fullPathForBacklinks = false;
+		await this.refresh();
 	}
 
 	async refresh() {

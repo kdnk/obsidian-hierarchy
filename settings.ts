@@ -27,10 +27,10 @@ export class FullPathSettingsTab extends PluginSettingTab {
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.fullPathForBacklinks)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.fullPathForBacklinks = value;
-						await this.plugin.saveData(this.plugin.settings);
-						await this.plugin.refresh();
+						this.plugin.saveData(this.plugin.settings);
+						this.plugin.refresh();
 					});
 			});
 
@@ -39,10 +39,10 @@ export class FullPathSettingsTab extends PluginSettingTab {
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.fullPathForTabs)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						this.plugin.settings.fullPathForTabs = value;
-						await this.plugin.saveData(this.plugin.settings);
-						await this.plugin.refresh();
+						this.plugin.saveData(this.plugin.settings);
+						this.plugin.refresh();
 					});
 			});
 	}
