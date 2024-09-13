@@ -1,7 +1,7 @@
 {
 	"id": "full-path-plugin",
 	"name": "Full Path",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Display the full path instead of just the file name",
 	"author": "Obsidian",
