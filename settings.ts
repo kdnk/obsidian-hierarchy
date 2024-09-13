@@ -22,6 +22,8 @@ export class FullPathSettingsTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 
+		containerEl.empty();
+
 		new Setting(containerEl)
 			.setName("Full path for backlinks")
 			.setDesc(
