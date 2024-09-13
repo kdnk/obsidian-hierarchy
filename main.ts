@@ -18,6 +18,7 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	async setPaneTitles(loopCount = 0) {
+		console.log(`[main.ts:21] loopCount: `, loopCount);
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
@@ -56,10 +57,10 @@ export default class FullPathPlugin extends Plugin {
 					0,
 				);
 			if (
-				loopCount < 10 &&
+				loopCount < 50 &&
 				backlinkCountCalulated < backlinkCountFromCache
 			) {
-				await sleep(500);
+				await sleep(100);
 				await this.setPaneTitles(loopCount + 1);
 			} else {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
