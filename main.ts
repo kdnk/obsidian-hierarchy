@@ -1,4 +1,11 @@
-import { App, FileView, MarkdownView, Plugin, PluginManifest } from "obsidian";
+import {
+	App,
+	FileView,
+	MarkdownView,
+	Plugin,
+	PluginManifest,
+	TFile,
+} from "obsidian";
 
 export default class FullPathPlugin extends Plugin {
 	constructor(app: App, pluginManifest: PluginManifest) {
@@ -9,16 +16,35 @@ export default class FullPathPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
 				await this.setBacklinkTitle();
+				this.setTabTitle();
 			}),
 		);
 
 		this.app.workspace.onLayoutReady(async () => {
 			await this.setBacklinkTitle();
+			this.setTabTitle();
 		});
 	}
 
+	setTabTitle() {
+		const { tabHeaderEls, children } = this.app.workspace
+			.activeTabGroup as unknown as {
+			tabHeaderEls: HTMLElement[];
+			children: { view: { file: TFile } }[];
+		};
+
+		for (const [index, tabHeaderEl] of tabHeaderEls.entries()) {
+			const titleEl = tabHeaderEl.querySelector(
+				".workspace-tab-header-inner-title",
+			) as HTMLElement;
+			if (titleEl) {
+				titleEl.textContent =
+					children[index].view.file.path.split(".")[0];
+			}
+		}
+	}
+
 	async setBacklinkTitle(loopCount = 0) {
-		console.log(`[main.ts:21] loopCount: `, loopCount);
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
