@@ -62,8 +62,6 @@ export default class FullPathPlugin extends Plugin {
 			children: { view: { file: TFile } }[];
 		};
 
-		console.log(`[main.ts:59] tabHeaderEls: `, tabHeaderEls);
-
 		for (const [index, tabHeaderEl] of tabHeaderEls.entries()) {
 			const titleEl = tabHeaderEl.querySelector(
 				".workspace-tab-header-inner-title",
@@ -106,17 +104,6 @@ export default class FullPathPlugin extends Plugin {
 				return new Promise((resolve) => setTimeout(resolve, msec));
 			};
 
-			const currentFile = this.app.workspace.getActiveFile();
-			if (!currentFile) return;
-			const backlinkCountFromCache = this.app.metadataCache
-				.getBacklinksForFile(currentFile)
-				.count();
-			const backlinkCountCalulated =
-				backlinks.backlinkDom.vChildren.children.reduce(
-					(acc, child) => acc + child.result.content.length,
-					0,
-				);
-
 			const renderFullPath = () => {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
 					const titleEl =
@@ -130,15 +117,25 @@ export default class FullPathPlugin extends Plugin {
 					}
 				}
 			};
+
+			renderFullPath();
+
+			const currentFile = this.app.workspace.getActiveFile();
+			if (!currentFile) return;
+			const backlinkCountFromCache = this.app.metadataCache
+				.getBacklinksForFile(currentFile)
+				.count();
+			const backlinkCountCalulated =
+				backlinks.backlinkDom.vChildren.children.reduce(
+					(acc, child) => acc + child.result.content.length,
+					0,
+				);
+
 			if (backlinkCountCalulated < backlinkCountFromCache) {
 				if (loopCount < 50) {
 					await sleep(100);
 					await this.setBacklinkTitle(loopCount + 1);
-				} else {
-					renderFullPath();
 				}
-			} else {
-				renderFullPath();
 			}
 		}
 	}
