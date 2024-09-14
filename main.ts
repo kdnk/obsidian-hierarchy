@@ -94,7 +94,10 @@ export default class FullPathPlugin extends Plugin {
 								};
 							};
 							file: TFile;
-							result: { content: unknown[] };
+							result: {
+								content: unknown[];
+								properties: unknown[];
+							};
 						}[];
 					};
 				};
@@ -127,13 +130,19 @@ export default class FullPathPlugin extends Plugin {
 				.count();
 			const backlinkCountCalulated =
 				backlinks.backlinkDom.vChildren.children.reduce(
-					(acc, child) => acc + child.result.content.length,
+					(acc, child) => {
+						return (
+							acc +
+							child.result.content.length +
+							child.result.properties.length
+						);
+					},
 					0,
 				);
 
 			if (backlinkCountCalulated < backlinkCountFromCache) {
-				if (loopCount < 50) {
-					await sleep(100);
+				if (loopCount < 30) {
+					await sleep(250);
 					await this.setBacklinkTitle(loopCount + 1);
 				}
 			}
