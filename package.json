@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-full-path-plugin",
+	"name": "obsidian-hierarchy",
 	"version": "0.0.11",
-	"description": "This is a plugin for Obsidian",
+	"description": "This is a hierarchy plugin for Obsidian",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
