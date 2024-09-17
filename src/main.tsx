@@ -11,10 +11,13 @@ import {
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
-import { HierarchyView, VIEW_TYPE_HIERARCHY } from "./hierarchy-view";
+import { HierarchyView } from "./hierarchy-view";
+import { Hierarchy } from "./hierarchy";
+import { createRoot } from "react-dom/client";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
+	view: HierarchyView;
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
 	}
@@ -25,17 +28,66 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				await this.refresh();
+				// await this.refresh();
 			}),
 		);
+
+		this.app.metadataCache.on("resolve", async (file) => {
+			// this.refresh();
+		});
 
 		this.app.workspace.onLayoutReady(async () => {
 			await this.refresh();
 		});
 
-		this.registerView(VIEW_TYPE_HIERARCHY, (leaf) => {
-			return new HierarchyView(leaf);
+		this.app.workspace.on("layout-change", async () => {
+			await this.refresh();
 		});
+	}
+
+	async activateHierarchyView() {
+		const CONTAINER_CLASS = "hierarchy-container";
+		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
+		for (const leaf of markdownLeaves) {
+			if (!(leaf.view instanceof MarkdownView)) return;
+
+			const mainEl = leaf.view.containerEl.querySelector(
+				".cm-contentContainer",
+			);
+			if (!mainEl) return;
+
+			const containers = leaf.view.containerEl.querySelectorAll(
+				"." + CONTAINER_CLASS,
+			);
+			if (containers) {
+				containers.forEach((el) => el.remove());
+			}
+			const newContainer = createDiv({ cls: CONTAINER_CLASS });
+			mainEl.after(newContainer);
+
+			console.log(`[main.ts:63] container: `, newContainer);
+			const root = createRoot(newContainer);
+			if (!leaf.view.file) return;
+			const paths = leaf.view.file.path.split(".")[0].split("/");
+			root.render(<Hierarchy hierarchies={paths}></Hierarchy>);
+		}
+	}
+
+	private getContainerElements(markdownView: MarkdownView): Element[] {
+		const CONTAINER_CLASS = "hierarchy-container";
+		const elements = markdownView.containerEl.querySelectorAll(
+			".markdown-source-view .CodeMirror-lines, .markdown-preview-view, .markdown-source-view .cm-sizer",
+		);
+
+		const containers: Element[] = [];
+		for (let i = 0; i < elements.length; i++) {
+			const el = elements.item(i);
+			const container =
+				el.querySelector("." + CONTAINER_CLASS) ||
+				el.createDiv({ cls: CONTAINER_CLASS });
+			containers.push(container);
+		}
+		return containers;
 	}
 
 	async onunload() {
@@ -47,7 +99,7 @@ export default class HierarchyPlugin extends Plugin {
 	async refresh() {
 		this.setTabTitle();
 		await this.setBacklinkTitle();
-		this.renderHierarchy();
+		this.activateHierarchyView();
 	}
 
 	async loadSettings() {
@@ -62,6 +114,7 @@ export default class HierarchyPlugin extends Plugin {
 	}
 
 	setTabTitle() {
+		if (!this.app.workspace.activeTabGroup) return;
 		const { tabHeaderEls, children } = this.app.workspace
 			.activeTabGroup as unknown as {
 			tabHeaderEls: HTMLElement[];
