@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-hierarchy",
 	"name": "Hierarchy",
-	"version": "0.0.12",
+	"version": "0.0.13",
 	"minAppVersion": "0.15.0",
 	"description": "Display the hierarchy instead of just the file name.",
 	"author": "Kodai Nakamura",
