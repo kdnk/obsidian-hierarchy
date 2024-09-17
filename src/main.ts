@@ -11,6 +11,7 @@ import {
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
+import { HierarchyView, VIEW_TYPE_HIERARCHY } from "./hierarchy-view";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
@@ -30,6 +31,10 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.app.workspace.onLayoutReady(async () => {
 			await this.refresh();
+		});
+
+		this.registerView(VIEW_TYPE_HIERARCHY, (leaf) => {
+			return new HierarchyView(leaf);
 		});
 	}
 
