@@ -3,7 +3,7 @@
 	"name": "Hierarchy",
 	"version": "0.0.12",
 	"minAppVersion": "0.15.0",
-	"description": "Display the full path instead of just the file name.",
+	"description": "Display the hierarchy instead of just the file name.",
 	"author": "Kodai Nakamura",
 	"isDesktopOnly": false
 }
