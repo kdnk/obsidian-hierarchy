@@ -42,6 +42,7 @@ export default class HierarchyPlugin extends Plugin {
 	async refresh() {
 		this.setTabTitle();
 		await this.setBacklinkTitle();
+		this.renderHierarchy();
 	}
 
 	async loadSettings() {
@@ -75,6 +76,20 @@ export default class HierarchyPlugin extends Plugin {
 				}
 			}
 		}
+	}
+
+	renderHierarchy() {
+		const markdownView =
+			this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (markdownView == null) {
+			return;
+		}
+
+		const activeFile = markdownView.file;
+		if (activeFile == null) {
+			return;
+		}
+		console.log(`[main.ts:92] activeFile);: `, activeFile);
 	}
 
 	async setBacklinkTitle(loopCount = 0) {
