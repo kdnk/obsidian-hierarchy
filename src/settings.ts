@@ -1,20 +1,20 @@
 import { PluginSettingTab, Setting } from "obsidian";
-import FullPathPlugin from "./main";
+import HierarchyPlugin from "./main";
 
-export type FullPathSettings = {
-	fullPathForBacklinks: boolean;
-	fullPathForTabs: boolean;
+export type HierarchySettings = {
+	hierarchyForBacklinks: boolean;
+	hierarchyForTabs: boolean;
 };
 
-export const DEFAULT_SETTINGS: FullPathSettings = {
-	fullPathForBacklinks: true,
-	fullPathForTabs: true,
+export const DEFAULT_SETTINGS: HierarchySettings = {
+	hierarchyForBacklinks: true,
+	hierarchyForTabs: true,
 };
 
-export class FullPathSettingsTab extends PluginSettingTab {
-	plugin: FullPathPlugin;
+export class HierarchyPluginSettingsTab extends PluginSettingTab {
+	plugin: HierarchyPlugin;
 	// @ts-ignore
-	constructor(app: App, plugin: FullPathPlugin) {
+	constructor(app: App, plugin: HierarchyPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
@@ -25,30 +25,30 @@ export class FullPathSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Full path for backlinks")
+			.setName("Hierarchy for backlinks")
 			.setDesc(
-				"Enable this setting to display the full path of the file in the backlinks panel.",
+				"Enable this setting to display the hierarchy of the file in the backlinks panel.",
 			)
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.plugin.settings.fullPathForBacklinks)
+					.setValue(this.plugin.settings.hierarchyForBacklinks)
 					.onChange((value) => {
-						this.plugin.settings.fullPathForBacklinks = value;
+						this.plugin.settings.hierarchyForBacklinks = value;
 						this.plugin.saveData(this.plugin.settings);
 						this.plugin.refresh();
 					});
 			});
 
 		new Setting(containerEl)
-			.setName("Full path for tabs")
+			.setName("Hierarchy for tabs")
 			.setDesc(
-				"Enable this setting to display the full path of the file in the tab headers.",
+				"Enable this setting to display the hierarchy of the file in the tab headers.",
 			)
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.plugin.settings.fullPathForTabs)
+					.setValue(this.plugin.settings.hierarchyForTabs)
 					.onChange((value) => {
-						this.plugin.settings.fullPathForTabs = value;
+						this.plugin.settings.hierarchyForTabs = value;
 						this.plugin.saveData(this.plugin.settings);
 						this.plugin.refresh();
 					});

@@ -8,19 +8,19 @@ import {
 } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
-	FullPathSettings,
-	FullPathSettingsTab,
+	HierarchySettings,
+	HierarchyPluginSettingsTab,
 } from "./settings";
 
-export default class FullPathPlugin extends Plugin {
-	settings: FullPathSettings;
+export default class HierarchyPlugin extends Plugin {
+	settings: HierarchySettings;
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
 	}
 
 	async onload() {
 		await this.loadSettings();
-		this.addSettingTab(new FullPathSettingsTab(this.app, this));
+		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
@@ -34,8 +34,8 @@ export default class FullPathPlugin extends Plugin {
 	}
 
 	async onunload() {
-		this.settings.fullPathForTabs = false;
-		this.settings.fullPathForBacklinks = false;
+		this.settings.hierarchyForTabs = false;
+		this.settings.hierarchyForBacklinks = false;
 		await this.refresh();
 	}
 
@@ -67,7 +67,7 @@ export default class FullPathPlugin extends Plugin {
 				".workspace-tab-header-inner-title",
 			) as HTMLElement;
 			if (titleEl) {
-				if (this.settings.fullPathForTabs) {
+				if (this.settings.hierarchyForTabs) {
 					titleEl.textContent =
 						children[index].view.file.path.split(".")[0];
 				} else {
@@ -107,12 +107,12 @@ export default class FullPathPlugin extends Plugin {
 				return new Promise((resolve) => setTimeout(resolve, msec));
 			};
 
-			const renderFullPath = () => {
+			const renderTitle = () => {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
 					const titleEl =
 						child.el.firstChild.find(".tree-item-inner");
 					if (titleEl) {
-						if (this.settings.fullPathForBacklinks) {
+						if (this.settings.hierarchyForBacklinks) {
 							titleEl.textContent = child.file.path.split(".")[0];
 						} else {
 							titleEl.textContent = child.file.basename;
@@ -121,7 +121,7 @@ export default class FullPathPlugin extends Plugin {
 				}
 			};
 
-			renderFullPath();
+			renderTitle();
 
 			const currentFile = this.app.workspace.getActiveFile();
 			if (!currentFile) return;
