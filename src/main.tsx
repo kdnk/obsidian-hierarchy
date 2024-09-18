@@ -72,21 +72,40 @@ export default class HierarchyPlugin extends Plugin {
 
 				if (!leaf.view.file) return;
 
-				const currentPathName = leaf.view.file.path.split(".")[0];
+				const getCleanPathName = (path: string) => {
+					let pathName = path.split(".")[0];
+					if (pathName.startsWith("pages/")) {
+						pathName = pathName.slice(6);
+					}
+					return pathName;
+				};
+
+				const currentPathName = getCleanPathName(leaf.view.file.path);
 				const children = files
 					.filter((file) => {
-						const pathName = file.split(".")[0];
+						function isSubdirectory(
+							parentDir: string,
+							subDir: string,
+						) {
+							return (
+								subDir.startsWith(parentDir) &&
+								(subDir[parentDir.length] === "/" ||
+									parentDir.length === subDir.length)
+							);
+						}
+						const pathName = getCleanPathName(file);
 						if (pathName === currentPathName) return false;
-						return currentPathName.startsWith(pathName);
+						return isSubdirectory(currentPathName, pathName);
 					})
 					.map((file) => {
-						return file.split(".")[0];
+						const pathName = getCleanPathName(file);
+						return pathName;
 					});
 
-				const paths = leaf.view.file.path.split(".")[0].split("/");
+				const hierarchies = currentPathName.split("/");
 				root.render(
 					<Hierarchy
-						hierarchies={paths}
+						hierarchies={hierarchies}
 						children={children}
 					></Hierarchy>,
 				);
