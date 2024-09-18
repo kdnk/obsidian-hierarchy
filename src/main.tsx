@@ -29,21 +29,18 @@ export default class HierarchyPlugin extends Plugin {
 		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
 		this.registerEvent(
-			this.app.workspace.on("file-open", async () => {
-				this.refresh();
+			this.app.workspace.on("file-open", async (file) => {
+				console.debug("file-open");
+				this.setTabTitle();
+				await this.setBacklinkTitle();
+				this.activateHierarchyView(file);
 			}),
 		);
 
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", async () => {
 				this.resetChildrenCache();
-				this.refresh();
-			}),
-		);
-
-		this.registerEvent(
-			this.app.workspace.on("layout-ready", async () => {
-				this.refresh();
+				this.activateHierarchyView();
 			}),
 		);
 	}
@@ -58,13 +55,13 @@ export default class HierarchyPlugin extends Plugin {
 		this.childrenCache = {};
 	}
 
-	private async activateHierarchyView() {
+	private async activateHierarchyView(file?: TFile | null) {
 		const CONTAINER_CLASS = "hierarchy-container";
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
-
-		for (const leaf of markdownLeaves) {
+		markdownLeaves.forEach((leaf) => {
 			if (!(leaf.view instanceof MarkdownView)) return;
 			if (!leaf.view.file) return;
+			if (file && leaf.view.file.path !== file.path) return;
 
 			const mainEl = leaf.view.containerEl.querySelector(
 				".cm-contentContainer",
@@ -96,7 +93,7 @@ export default class HierarchyPlugin extends Plugin {
 					children={children}
 				></Hierarchy>,
 			);
-		}
+		});
 	}
 
 	private getChildren(currentPathName: string) {
