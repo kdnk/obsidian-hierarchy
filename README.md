@@ -32,7 +32,7 @@ To configure the plugin:
 
 ## Tips
 
-If you prefer using paths over tags (like I do), I recommend using **Obsidian Linter**.  
+If you prefer using paths over tags (like I do), I recommend using [Obsidian Linter](https://github.com/platers/obsidian-linter).  
 When you use Obsidian's autocomplete feature to insert paths, it often automatically adds aliases to the links. You can prevent this by using the following regular expressions:
 
 - **Regex to find**: `\[\[([^|]+)\|([^|]+)\]\]`
