@@ -11,13 +11,11 @@ import {
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
-import { HierarchyView } from "./hierarchy-view";
 import { Hierarchy } from "./hierarchy";
 import { createRoot } from "react-dom/client";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
-	view: HierarchyView;
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
 	}
