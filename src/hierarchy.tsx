@@ -1,25 +1,28 @@
+import * as React from "react";
 export const Hierarchy = (props: { hierarchies: string[] }) => {
 	let basePath = "";
+	const [isExpanded, setIsExpanded] = React.useState(true);
 	return props.hierarchies.length > 0 ? (
 		<div
 			style={{
 				marginBottom: 16,
 				borderTop: "1px solid var(--background-modifier-border)",
 			}}
+			className="hierarchy-wrapper"
 		>
 			<div className="nav-header"></div>
 			<div
-				style={{
-					padding: "var(--nav-item-padding)",
-					paddingInlineStart: "var(--size-4-2)",
-				}}
+				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 			>
-				<div className="tree-item-inner">Hierarchy</div>
+				<div
+					className={`hierarchy-title`}
+					onClick={() => setIsExpanded((val) => !val)}
+				>
+					Hierarchy
+				</div>
 			</div>
 			<div
-				style={{
-					paddingInlineStart: "var(--size-4-2)",
-				}}
+				className={`hierarchy-link-list ${isExpanded ? "hierarchy-list-expanded" : "hierarchy-list-collapsed"}`}
 			>
 				{props.hierarchies.map((prop, index) => {
 					basePath = index === 0 ? prop : `${basePath}/${prop}`;
