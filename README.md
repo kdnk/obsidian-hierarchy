@@ -26,11 +26,27 @@ To configure the plugin:
 
 ## Settings
 
-## Settings
-
 -   **Display hierarchy in backlinks panel**: Toggle this setting to show the folder hierarchy of files in the backlinks panel, providing more context for each backlink.
 -   **Display hierarchy in tab headers**: Enable this setting to show the folder hierarchy in the tab headers, allowing you to see the file's path in addition to its name.
 -   **Display hierarchy in editor view**: Enable this setting to display the folder hierarchy below each markdown editor, helping you to quickly see related files in the same directory.
+
+## Tips
+
+If you prefer using paths over tags (like I do), I recommend using **Obsidian Linter**.  
+When you use Obsidian's autocomplete feature to insert paths, it often automatically adds aliases to the links. You can prevent this by using the following regular expressions:
+
+- **Regex to find**: `\[\[([^|]+)\|([^|]+)\]\]`
+- **Regex to replace**: `[[$1]]`
+
+Additionally, I store all my pages under the `pages/` directory, but I don’t want to start every link with `pages/`. To avoid this, I use the following setting:
+
+- **Regex to find**: `\[\[pages/([^|]+)\]\]`
+- **Regex to replace**: `[[$1]]`
+
+This setup will clean up both aliases and the `pages/` prefix, leaving a simple and clean path for your links.
+
+ref. https://platers.github.io/obsidian-linter/settings/custom-rules/#custom-regex-replacements
+<img width="500px" src="https://github.com/user-attachments/assets/7ee3f1e8-6f78-44b9-bf80-59c134778555" />
 
 ## Contributing
 
