@@ -75,6 +75,8 @@ export default class HierarchyPlugin extends Plugin {
 				containers.forEach((el) => el.remove());
 			}
 
+			if (!this.settings.hierarchyForEditors) return;
+
 			const newContainer = createDiv({ cls: CONTAINER_CLASS });
 			mainEl.after(newContainer);
 
