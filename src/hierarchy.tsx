@@ -60,13 +60,14 @@ export const Hierarchy = (props: {
 const HierarchyItem = (props: { path: string }) => {
 	return (
 		<div key={props.path}>
-			[[
+			<span className="cm-formatting cm-formatting-list cm-list-1">
+				<span className="list-bullet">-</span>{" "}
+			</span>
 			<span className="cm-hmd-internal-link cm-list-1">
 				<a href={`obsidian://new?file=${props.path}.md&append=true`}>
 					{props.path}
 				</a>
 			</span>
-			]]
 		</div>
 	);
 };
