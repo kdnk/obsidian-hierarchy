@@ -130,7 +130,6 @@ export default class HierarchyPlugin extends Plugin {
 		if (activeFile == null) {
 			return;
 		}
-		console.log(`[main.ts:92] activeFile);: `, activeFile);
 	}
 
 	async setBacklinkTitle(loopCount = 0) {
