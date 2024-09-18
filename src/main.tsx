@@ -31,7 +31,7 @@ export default class HierarchyPlugin extends Plugin {
 			}),
 		);
 
-		this.app.metadataCache.on("resolve", async (file) => {
+		this.app.metadataCache.on("resolve", async () => {
 			this.activateHierarchyView();
 		});
 
