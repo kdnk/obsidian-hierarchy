@@ -62,9 +62,6 @@ export default class HierarchyPlugin extends Plugin {
 			const containers = leaf.view.containerEl.querySelectorAll(
 				"." + CONTAINER_CLASS,
 			);
-			if (containers) {
-				containers.forEach((el) => el.remove());
-			}
 
 			if (this.settings.hierarchyForEditors) {
 				const newContainer = createDiv({ cls: CONTAINER_CLASS });
@@ -105,6 +102,11 @@ export default class HierarchyPlugin extends Plugin {
 					});
 
 				const hierarchies = currentPathName.split("/");
+
+				if (containers) {
+					containers.forEach((el) => el.remove());
+				}
+
 				root.render(
 					<Hierarchy
 						hierarchies={hierarchies}
