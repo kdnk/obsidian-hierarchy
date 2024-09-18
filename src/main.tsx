@@ -34,14 +34,18 @@ export default class HierarchyPlugin extends Plugin {
 			}),
 		);
 
-		this.app.metadataCache.on("resolved", async () => {
-			this.resetChildrenCache();
-			this.refresh();
-		});
+		this.registerEvent(
+			this.app.metadataCache.on("resolved", async () => {
+				this.resetChildrenCache();
+				this.refresh();
+			}),
+		);
 
-		this.app.workspace.on("layout-ready", async () => {
-			this.refresh();
-		});
+		this.registerEvent(
+			this.app.workspace.on("layout-ready", async () => {
+				this.refresh();
+			}),
+		);
 	}
 
 	async refresh() {
