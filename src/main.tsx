@@ -5,6 +5,7 @@ import {
 	Plugin,
 	PluginManifest,
 	TFile,
+	Platform,
 } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
@@ -132,7 +133,9 @@ export default class HierarchyPlugin extends Plugin {
 	}
 
 	setTabTitle() {
+		if (Platform.isMobile) return;
 		if (!this.app.workspace.activeTabGroup) return;
+
 		const { tabHeaderEls, children } = this.app.workspace
 			.activeTabGroup as unknown as {
 			tabHeaderEls: HTMLElement[];
