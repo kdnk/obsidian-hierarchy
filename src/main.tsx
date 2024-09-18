@@ -28,26 +28,26 @@ export default class HierarchyPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
-		const refreshDebounced = async () => {
-			this.setTabTitle();
-			await this.setBacklinkTitle();
-			this.activateHierarchyView();
-		};
-
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				refreshDebounced();
+				this.refresh();
 			}),
 		);
 
 		this.app.metadataCache.on("changed", async () => {
 			this.resetChildrenCache();
-			refreshDebounced();
+			this.refresh();
 		});
 
 		this.app.workspace.on("layout-ready", async () => {
-			refreshDebounced();
+			this.refresh();
 		});
+	}
+
+	async refresh() {
+		this.setTabTitle();
+		await this.setBacklinkTitle();
+		this.activateHierarchyView();
 	}
 
 	private resetChildrenCache() {
