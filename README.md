@@ -1,37 +1,40 @@
 # 🛣️ Obsidian Hierarchy 🛤️
 
-## Overview
-
-The **Obsidian Hierarchy** plugin is an Obsidian plugin that enhances your workspace by displaying the hierarchy of files in the tab headers and backlinks. This feature helps users easily identify files with similar names by showing their full paths, thus improving the navigation experience within large vaults.
+The Hierarchy Plugin for Obsidian enhances your note-taking experience by visualizing the folder hierarchy of your markdown files directly within the editor. This plugin allows users to see subdirectory structures and modify how file titles are displayed in tabs and backlinks based on their file paths.
 
 ## Features
 
--   **Obsidian Hierarchy in Tab Headers**: Toggle the display of the hierarchy or just the file name in the tab headers.
--   **Obsidian Hierarchy in Backlinks**: Toggle the display of the hierarchy or just the file name in the backlinks panel.
-
-## Installation
-
-1. Install the plugin directly from the Obsidian Community Plugins list
+- **Hierarchy View in Editor**: Display the folder structure of the current file in a collapsible hierarchy view within the editor. This provides a clear visual representation of subdirectories and related files.
+- **Tab Title Customization**: Customize the titles of your open tabs. Choose between displaying the full path or just the file name.
+- **Backlink Title Customization**: Modify the way backlink titles are shown by either displaying the full path or only the file name.
 
 ## Usage
 
-### Settings
+Once installed, the Hierarchy Plugin will:
+- Automatically display a hierarchy view when you open a markdown file.
+- Update the titles of your open tabs and backlinks to reflect the file path settings.
 
-The plugin offers two main settings:
+To configure the plugin:
+1. Go to **Settings > Hierarchy Plugin**.
+2. Toggle the settings to enable or disable the hierarchy view, tab title customization, and backlink title customization.
 
-1. **Obsidian Hierarchy for Tabs**:
+## Settings
 
-    - Enable this setting to display the hierarchy of the file in the tab headers.
-    - Disable this setting to only display the file name.
+## Settings
 
-2. **Obsidian Hierarchy for Backlinks**:
-    - Enable this setting to display the hierarchy of the file in the backlinks panel.
-    - Disable this setting to only display the file name.
+- **Display hierarchy in backlinks panel**: Toggle this setting to show the folder hierarchy of files in the backlinks panel, providing more context for each backlink.
+- **Display hierarchy in tab headers**: Enable this setting to show the folder hierarchy in the tab headers, allowing you to see the file's path in addition to its name.
+- **Display hierarchy in editor view**: Enable this setting to display the folder hierarchy below each markdown editor, helping you to quickly see related files in the same directory.
 
-### How to Use
+## Future Plans
 
-Once the plugin is enabled and configured through the settings tab, the tab headers and backlinks will automatically show either the hierarchy or just the file name based on your settings.
+- Support for additional file types.
+- More customization options for hierarchy display.
 
-## Support
+## Contributing
 
-If you encounter any issues or have feature requests, please open an issue on the plugin's GitHub repository.
+Contributions are welcome! If you have ideas, feature requests, or bug reports, feel free to open an issue or submit a pull request.
+
+## License
+
+This plugin is open-source and available under the MIT License.

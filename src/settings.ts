@@ -27,9 +27,9 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Hierarchy for backlinks")
+			.setName("Display hierarchy in backlinks panel")
 			.setDesc(
-				"Enable this setting to display the hierarchy of the file in the backlinks panel.",
+				"Toggle this option to show the folder hierarchy of files in the backlinks panel, providing more context for each backlink.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -42,9 +42,9 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Hierarchy for tabs")
+			.setName("Display hierarchy in tab headers")
 			.setDesc(
-				"Enable this setting to display the hierarchy of the file in the tab headers.",
+				"Enable this option to show the folder hierarchy in the tab headers, allowing you to see the file's path in addition to its name.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -57,15 +57,15 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Hierarchy under each editor")
+			.setName("Display hierarchy in editor view")
 			.setDesc(
-				"Enable this setting to display the hierarchy of the file in the editor.",
+				"Enable this option to display the folder hierarchy below each markdown editor, helping you to quickly see related files in the same directory.",
 			)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.hierarchyForEditors)
 					.onChange((value) => {
-						this.plugin.settings.hierarchyForTabs = value;
+						this.plugin.settings.hierarchyForEditors = value;
 						this.plugin.saveData(this.plugin.settings);
 						this.plugin.refresh();
 					});
