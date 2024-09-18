@@ -17,9 +17,11 @@ import { createRoot } from "react-dom/client";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
+	childrenCache: Record<string, string[]>;
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
+		this.childrenCache = {};
 	}
 
 	async onload() {
@@ -39,6 +41,7 @@ export default class HierarchyPlugin extends Plugin {
 		);
 
 		this.app.metadataCache.on("changed", async () => {
+			this.resetChildrenCache();
 			refreshDebounced();
 		});
 
@@ -47,11 +50,14 @@ export default class HierarchyPlugin extends Plugin {
 		});
 	}
 
-	async activateHierarchyView() {
+	private resetChildrenCache() {
+		this.childrenCache = {};
+	}
+
+	private async activateHierarchyView() {
 		const CONTAINER_CLASS = "hierarchy-container";
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 
-		const files = this.app.metadataCache.getCachedFiles();
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
 			if (!leaf.view.file) return;
@@ -74,34 +80,9 @@ export default class HierarchyPlugin extends Plugin {
 
 			const root = createRoot(newContainer);
 
-			const getCleanPathName = (path: string) => {
-				let pathName = path.split(".")[0];
-				if (pathName.startsWith("pages/")) {
-					pathName = pathName.slice(6);
-				}
-				return pathName;
-			};
-
-			const currentPathName = getCleanPathName(leaf.view.file.path);
-			const children = files
-				.filter((file) => {
-					function isSubdirectory(parentDir: string, subDir: string) {
-						return (
-							subDir.startsWith(parentDir) &&
-							(subDir[parentDir.length] === "/" ||
-								parentDir.length === subDir.length)
-						);
-					}
-					const pathName = getCleanPathName(file);
-					if (pathName === currentPathName) return false;
-					return isSubdirectory(currentPathName, pathName);
-				})
-				.map((file) => {
-					const pathName = getCleanPathName(file);
-					return pathName;
-				});
-
+			const currentPathName = this.getCleanPathName(leaf.view.file.path);
 			const hierarchies = currentPathName.split("/");
+			const children = this.getChildren(currentPathName);
 
 			root.render(
 				<Hierarchy
@@ -110,6 +91,42 @@ export default class HierarchyPlugin extends Plugin {
 				></Hierarchy>,
 			);
 		}
+	}
+
+	private getChildren(currentPathName: string) {
+		const files = this.app.metadataCache.getCachedFiles();
+		if (this.childrenCache[currentPathName]) {
+			return this.childrenCache[currentPathName];
+		}
+
+		const children = files
+			.filter((file) => {
+				function isSubdirectory(parentDir: string, subDir: string) {
+					return (
+						subDir.startsWith(parentDir) &&
+						(subDir[parentDir.length] === "/" ||
+							parentDir.length === subDir.length)
+					);
+				}
+
+				const pathName = this.getCleanPathName(file);
+				if (pathName === currentPathName) return false;
+				return isSubdirectory(currentPathName, pathName);
+			})
+			.map((file) => {
+				const pathName = this.getCleanPathName(file);
+				return pathName;
+			});
+		this.childrenCache[currentPathName] = children;
+		return children;
+	}
+
+	private getCleanPathName(path: string) {
+		let pathName = path.split(".")[0];
+		if (pathName.startsWith("pages/")) {
+			pathName = pathName.slice(6);
+		}
+		return pathName;
 	}
 
 	async onunload() {
@@ -132,7 +149,7 @@ export default class HierarchyPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	setTabTitle() {
+	private setTabTitle() {
 		if (Platform.isMobile) return;
 		if (!this.app.workspace.activeTabGroup) return;
 
@@ -158,20 +175,7 @@ export default class HierarchyPlugin extends Plugin {
 		}
 	}
 
-	renderHierarchy() {
-		const markdownView =
-			this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (markdownView == null) {
-			return;
-		}
-
-		const activeFile = markdownView.file;
-		if (activeFile == null) {
-			return;
-		}
-	}
-
-	async setBacklinkTitle(loopCount = 0) {
+	private async setBacklinkTitle(loopCount = 0) {
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
