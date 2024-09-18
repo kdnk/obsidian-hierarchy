@@ -77,7 +77,7 @@ export default class HierarchyPlugin extends Plugin {
 					.filter((file) => {
 						const pathName = file.split(".")[0];
 						if (pathName === currentPathName) return false;
-						return pathName.includes(currentPathName);
+						return currentPathName.startsWith(pathName);
 					})
 					.map((file) => {
 						return file.split(".")[0];
