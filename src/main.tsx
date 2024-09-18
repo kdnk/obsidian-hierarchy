@@ -63,57 +63,56 @@ export default class HierarchyPlugin extends Plugin {
 				"." + CONTAINER_CLASS,
 			);
 
-			if (this.settings.hierarchyForEditors) {
-				const newContainer = createDiv({ cls: CONTAINER_CLASS });
-				mainEl.after(newContainer);
-
-				const root = createRoot(newContainer);
-
-				if (!leaf.view.file) return;
-
-				const getCleanPathName = (path: string) => {
-					let pathName = path.split(".")[0];
-					if (pathName.startsWith("pages/")) {
-						pathName = pathName.slice(6);
-					}
-					return pathName;
-				};
-
-				const currentPathName = getCleanPathName(leaf.view.file.path);
-				const children = files
-					.filter((file) => {
-						function isSubdirectory(
-							parentDir: string,
-							subDir: string,
-						) {
-							return (
-								subDir.startsWith(parentDir) &&
-								(subDir[parentDir.length] === "/" ||
-									parentDir.length === subDir.length)
-							);
-						}
-						const pathName = getCleanPathName(file);
-						if (pathName === currentPathName) return false;
-						return isSubdirectory(currentPathName, pathName);
-					})
-					.map((file) => {
-						const pathName = getCleanPathName(file);
-						return pathName;
-					});
-
-				const hierarchies = currentPathName.split("/");
-
-				if (containers) {
-					containers.forEach((el) => el.remove());
-				}
-
-				root.render(
-					<Hierarchy
-						hierarchies={hierarchies}
-						children={children}
-					></Hierarchy>,
-				);
+			if (!this.settings.hierarchyForEditors) {
+				return;
 			}
+
+			const newContainer = createDiv({ cls: CONTAINER_CLASS });
+			mainEl.after(newContainer);
+
+			const root = createRoot(newContainer);
+
+			if (!leaf.view.file) return;
+
+			const getCleanPathName = (path: string) => {
+				let pathName = path.split(".")[0];
+				if (pathName.startsWith("pages/")) {
+					pathName = pathName.slice(6);
+				}
+				return pathName;
+			};
+
+			const currentPathName = getCleanPathName(leaf.view.file.path);
+			const children = files
+				.filter((file) => {
+					function isSubdirectory(parentDir: string, subDir: string) {
+						return (
+							subDir.startsWith(parentDir) &&
+							(subDir[parentDir.length] === "/" ||
+								parentDir.length === subDir.length)
+						);
+					}
+					const pathName = getCleanPathName(file);
+					if (pathName === currentPathName) return false;
+					return isSubdirectory(currentPathName, pathName);
+				})
+				.map((file) => {
+					const pathName = getCleanPathName(file);
+					return pathName;
+				});
+
+			const hierarchies = currentPathName.split("/");
+
+			if (containers) {
+				containers.forEach((el) => el.remove());
+			}
+
+			root.render(
+				<Hierarchy
+					hierarchies={hierarchies}
+					children={children}
+				></Hierarchy>,
+			);
 		}
 	}
 
