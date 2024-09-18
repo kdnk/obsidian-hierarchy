@@ -2,6 +2,10 @@
 
 The Hierarchy Plugin for Obsidian enhances your note-taking experience by visualizing the folder hierarchy of your markdown files directly within the editor. This plugin allows users to see subdirectory structures and modify how file titles are displayed in tabs and backlinks based on their file paths.
 
+## 📸
+
+<img src="https://github.com/user-attachments/assets/41a54812-f998-4dd0-b4df-e1a51e4bf49d" width="500px" />
+
 ## Features
 
 - **Hierarchy View in Editor**: Display the folder structure of the current file in a collapsible hierarchy view within the editor. This provides a clear visual representation of subdirectories and related files.
