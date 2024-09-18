@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
+
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
 	}
@@ -25,25 +26,25 @@ export default class HierarchyPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
+		const refreshDebounced = async () => {
+			this.setTabTitle();
+			await this.setBacklinkTitle();
+			this.activateHierarchyView();
+		};
+
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				await this.refresh();
+				refreshDebounced();
 			}),
 		);
 
-		this.app.metadataCache.on("resolve", async () => {
-			this.activateHierarchyView();
+		this.app.metadataCache.on("changed", async () => {
+			refreshDebounced();
 		});
 
 		this.app.workspace.on("layout-ready", async () => {
-			await this.refresh();
+			refreshDebounced();
 		});
-	}
-
-	async refresh() {
-		this.setTabTitle();
-		await this.setBacklinkTitle();
-		this.activateHierarchyView();
 	}
 
 	async activateHierarchyView() {
@@ -53,15 +54,12 @@ export default class HierarchyPlugin extends Plugin {
 		const files = this.app.metadataCache.getCachedFiles();
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
+			if (!leaf.view.file) return;
 
 			const mainEl = leaf.view.containerEl.querySelector(
 				".cm-contentContainer",
 			);
 			if (!mainEl) return;
-
-			if (!this.settings.hierarchyForEditors) {
-				return;
-			}
 
 			const containers = leaf.view.containerEl.querySelectorAll(
 				"." + CONTAINER_CLASS,
@@ -75,8 +73,6 @@ export default class HierarchyPlugin extends Plugin {
 			mainEl.after(newContainer);
 
 			const root = createRoot(newContainer);
-
-			if (!leaf.view.file) return;
 
 			const getCleanPathName = (path: string) => {
 				let pathName = path.split(".")[0];
@@ -119,7 +115,10 @@ export default class HierarchyPlugin extends Plugin {
 	async onunload() {
 		this.settings.hierarchyForTabs = false;
 		this.settings.hierarchyForBacklinks = false;
-		await this.refresh();
+
+		this.activateHierarchyView();
+		this.setTabTitle();
+		await this.setBacklinkTitle();
 	}
 
 	async loadSettings() {
@@ -149,6 +148,7 @@ export default class HierarchyPlugin extends Plugin {
 			) as HTMLElement;
 			if (titleEl) {
 				if (this.settings.hierarchyForTabs) {
+					if (!children[index].view.file) return;
 					titleEl.textContent =
 						children[index].view.file.path.split(".")[0];
 				} else {
