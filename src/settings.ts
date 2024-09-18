@@ -4,11 +4,13 @@ import HierarchyPlugin from "./main";
 export type HierarchySettings = {
 	hierarchyForBacklinks: boolean;
 	hierarchyForTabs: boolean;
+	hierarchyForEditors: boolean;
 };
 
 export const DEFAULT_SETTINGS: HierarchySettings = {
 	hierarchyForBacklinks: true,
 	hierarchyForTabs: true,
+	hierarchyForEditors: true,
 };
 
 export class HierarchyPluginSettingsTab extends PluginSettingTab {
@@ -47,6 +49,21 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.plugin.settings.hierarchyForTabs)
+					.onChange((value) => {
+						this.plugin.settings.hierarchyForTabs = value;
+						this.plugin.saveData(this.plugin.settings);
+						this.plugin.refresh();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Hierarchy under each editor")
+			.setDesc(
+				"Enable this setting to display the hierarchy of the file in the editor.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.hierarchyForEditors)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForTabs = value;
 						this.plugin.saveData(this.plugin.settings);

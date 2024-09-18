@@ -28,15 +28,16 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async () => {
-				// await this.refresh();
+				await this.refresh();
 			}),
 		);
 
-		this.app.metadataCache.on("resolve", async (file) => {
-			// this.refresh();
-		});
+		// this.app.metadataCache.on("resolve", async (file) => {
+		// 	// this.refresh();
+		// });
+		//
 
-		this.app.workspace.onLayoutReady(async () => {
+		this.app.workspace.on("layout-ready", async () => {
 			await this.refresh();
 		});
 
@@ -62,32 +63,16 @@ export default class HierarchyPlugin extends Plugin {
 			if (containers) {
 				containers.forEach((el) => el.remove());
 			}
-			const newContainer = createDiv({ cls: CONTAINER_CLASS });
-			mainEl.after(newContainer);
+			if (this.settings.hierarchyForEditors) {
+				const newContainer = createDiv({ cls: CONTAINER_CLASS });
+				mainEl.after(newContainer);
 
-			console.log(`[main.ts:63] container: `, newContainer);
-			const root = createRoot(newContainer);
-			if (!leaf.view.file) return;
-			const paths = leaf.view.file.path.split(".")[0].split("/");
-			root.render(<Hierarchy hierarchies={paths}></Hierarchy>);
+				const root = createRoot(newContainer);
+				if (!leaf.view.file) return;
+				const paths = leaf.view.file.path.split(".")[0].split("/");
+				root.render(<Hierarchy hierarchies={paths}></Hierarchy>);
+			}
 		}
-	}
-
-	private getContainerElements(markdownView: MarkdownView): Element[] {
-		const CONTAINER_CLASS = "hierarchy-container";
-		const elements = markdownView.containerEl.querySelectorAll(
-			".markdown-source-view .CodeMirror-lines, .markdown-preview-view, .markdown-source-view .cm-sizer",
-		);
-
-		const containers: Element[] = [];
-		for (let i = 0; i < elements.length; i++) {
-			const el = elements.item(i);
-			const container =
-				el.querySelector("." + CONTAINER_CLASS) ||
-				el.createDiv({ cls: CONTAINER_CLASS });
-			containers.push(container);
-		}
-		return containers;
 	}
 
 	async onunload() {
