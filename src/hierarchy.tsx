@@ -6,13 +6,7 @@ export const Hierarchy = (props: {
 	let basePath = "";
 	const [isExpanded, setIsExpanded] = React.useState(true);
 	return props.hierarchies.length > 0 ? (
-		<div
-			style={{
-				marginBottom: 16,
-				borderTop: "1px solid var(--background-modifier-border)",
-			}}
-			className="hierarchy-wrapper"
-		>
+		<div className="hierarchy-wrapper">
 			<div className="nav-header"></div>
 			<div
 				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
