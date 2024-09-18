@@ -1,9 +1,16 @@
 import * as React from "react";
+
 export const Hierarchy = (props: {
 	hierarchies: string[];
 	children: string[];
 }) => {
 	const [isExpanded, setIsExpanded] = React.useState(true);
+
+	const computeBasePath = (hierarchies: string[]) => {
+		return hierarchies.reduce((acc, curr, index) => {
+			return index === 0 ? curr : `${acc}/${curr}`;
+		}, "");
+	};
 
 	return props.hierarchies.length > 0 ? (
 		<div className="hierarchy-wrapper">
@@ -12,7 +19,7 @@ export const Hierarchy = (props: {
 				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 			>
 				<div
-					className={`hierarchy-title`}
+					className="hierarchy-title"
 					onClick={() => setIsExpanded((val) => !val)}
 				>
 					Hierarchy
@@ -21,31 +28,38 @@ export const Hierarchy = (props: {
 			<div
 				className={`hierarchy-link-list ${isExpanded ? "hierarchy-list-expanded" : "hierarchy-list-collapsed"}`}
 			>
-				{
-					props.hierarchies.reduce(
-						(acc, prop, index) => {
-							const newPath =
-								index === 0 ? prop : `${acc}/${prop}`;
-							const items = [
-								...acc.items,
-								<HierarchyItem key={newPath} path={newPath} />,
-							];
-							return { path: newPath, items };
-						},
-						{ path: "", items: [] },
-					).items
-				}
-				{props.children.map((childPath) => (
-					<HierarchyItem key={childPath} path={childPath} />
-				))}
+				{props.hierarchies.map((_, index) => {
+					if (index === props.hierarchies.length - 1) {
+						return null;
+					}
+					const basePath = computeBasePath(
+						props.hierarchies.slice(0, index + 1),
+					);
+					return (
+						<HierarchyItem
+							key={basePath}
+							path={basePath}
+						></HierarchyItem>
+					);
+				})}
+				{props.children.map((childPath) => {
+					return (
+						<HierarchyItem
+							key={childPath}
+							path={childPath}
+						></HierarchyItem>
+					);
+				})}
 			</div>
 		</div>
-	) : null;
+	) : (
+		<></>
+	);
 };
 
 const HierarchyItem = (props: { path: string }) => {
 	return (
-		<div>
+		<div key={props.path}>
 			[[
 			<span className="cm-hmd-internal-link cm-list-1">
 				<a href={`obsidian://new?file=${props.path}.md&append=true`}>
