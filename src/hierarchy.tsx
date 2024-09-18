@@ -1,5 +1,4 @@
 import * as React from "react";
-
 export const Hierarchy = (props: {
 	hierarchies: string[];
 	children: string[];
@@ -22,28 +21,31 @@ export const Hierarchy = (props: {
 			<div
 				className={`hierarchy-link-list ${isExpanded ? "hierarchy-list-expanded" : "hierarchy-list-collapsed"}`}
 			>
-				{props.hierarchies.reduce((path, prop, index) => {
-					const newPath = index === 0 ? prop : `${path}/${prop}`;
-
-					if (index < props.hierarchies.length - 1) {
-						return newPath; // Update path and continue
-					}
-
-					return path; // Final path, do not modify further
-				}, "")}
+				{
+					props.hierarchies.reduce(
+						(acc, prop, index) => {
+							const newPath =
+								index === 0 ? prop : `${acc}/${prop}`;
+							const items = [
+								...acc.items,
+								<HierarchyItem key={newPath} path={newPath} />,
+							];
+							return { path: newPath, items };
+						},
+						{ path: "", items: [] },
+					).items
+				}
 				{props.children.map((childPath) => (
-					<HierarchyItem path={childPath} />
+					<HierarchyItem key={childPath} path={childPath} />
 				))}
 			</div>
 		</div>
-	) : (
-		<></>
-	);
+	) : null;
 };
 
 const HierarchyItem = (props: { path: string }) => {
 	return (
-		<div key={props.path}>
+		<div>
 			[[
 			<span className="cm-hmd-internal-link cm-list-1">
 				<a href={`obsidian://new?file=${props.path}.md&append=true`}>
