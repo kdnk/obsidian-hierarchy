@@ -30,18 +30,19 @@ export default class HierarchyPlugin extends Plugin {
 			}),
 		);
 
-		// this.app.metadataCache.on("resolve", async (file) => {
-		// 	// this.refresh();
-		// });
-		//
+		this.app.metadataCache.on("resolve", async (file) => {
+			this.activateHierarchyView();
+		});
 
 		this.app.workspace.on("layout-ready", async () => {
 			await this.refresh();
 		});
+	}
 
-		this.app.workspace.on("layout-change", async () => {
-			await this.refresh();
-		});
+	async refresh() {
+		this.setTabTitle();
+		await this.setBacklinkTitle();
+		this.activateHierarchyView();
 	}
 
 	async activateHierarchyView() {
@@ -117,12 +118,6 @@ export default class HierarchyPlugin extends Plugin {
 		this.settings.hierarchyForTabs = false;
 		this.settings.hierarchyForBacklinks = false;
 		await this.refresh();
-	}
-
-	async refresh() {
-		this.setTabTitle();
-		await this.setBacklinkTitle();
-		this.activateHierarchyView();
 	}
 
 	async loadSettings() {
