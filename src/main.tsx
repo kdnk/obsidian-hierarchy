@@ -34,7 +34,7 @@ export default class HierarchyPlugin extends Plugin {
 			}),
 		);
 
-		this.app.metadataCache.on("changed", async () => {
+		this.app.metadataCache.on("resolved", async () => {
 			this.resetChildrenCache();
 			this.refresh();
 		});
@@ -97,9 +97,9 @@ export default class HierarchyPlugin extends Plugin {
 
 	private getChildren(currentPathName: string) {
 		const files = this.app.metadataCache.getCachedFiles();
-		// if (this.childrenCache[currentPathName]) {
-		// 	return this.childrenCache[currentPathName];
-		// }
+		if (this.childrenCache[currentPathName]) {
+			return this.childrenCache[currentPathName];
+		}
 
 		const children = files
 			.filter((file) => {
