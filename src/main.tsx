@@ -47,6 +47,8 @@ export default class HierarchyPlugin extends Plugin {
 	async activateHierarchyView() {
 		const CONTAINER_CLASS = "hierarchy-container";
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
+
+		const files = this.app.metadataCache.getCachedFiles();
 		for (const leaf of markdownLeaves) {
 			if (!(leaf.view instanceof MarkdownView)) return;
 
@@ -61,14 +63,33 @@ export default class HierarchyPlugin extends Plugin {
 			if (containers) {
 				containers.forEach((el) => el.remove());
 			}
+
 			if (this.settings.hierarchyForEditors) {
 				const newContainer = createDiv({ cls: CONTAINER_CLASS });
 				mainEl.after(newContainer);
 
 				const root = createRoot(newContainer);
+
 				if (!leaf.view.file) return;
+
+				const currentPathName = leaf.view.file.path.split(".")[0];
+				const children = files
+					.filter((file) => {
+						const pathName = file.split(".")[0];
+						if (pathName === currentPathName) return false;
+						return pathName.includes(currentPathName);
+					})
+					.map((file) => {
+						return file.split(".")[0];
+					});
+
 				const paths = leaf.view.file.path.split(".")[0].split("/");
-				root.render(<Hierarchy hierarchies={paths}></Hierarchy>);
+				root.render(
+					<Hierarchy
+						hierarchies={paths}
+						children={children}
+					></Hierarchy>,
+				);
 			}
 		}
 	}

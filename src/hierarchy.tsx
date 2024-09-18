@@ -1,5 +1,8 @@
 import * as React from "react";
-export const Hierarchy = (props: { hierarchies: string[] }) => {
+export const Hierarchy = (props: {
+	hierarchies: string[];
+	children: string[];
+}) => {
 	let basePath = "";
 	const [isExpanded, setIsExpanded] = React.useState(true);
 	return props.hierarchies.length > 0 ? (
@@ -31,23 +34,28 @@ export const Hierarchy = (props: { hierarchies: string[] }) => {
 						return null;
 					}
 
-					return (
-						<div key={index}>
-							[[
-							<span className="cm-hmd-internal-link cm-list-1">
-								<a
-									href={`obsidian://new?file=${basePath}.md&append=true`}
-								>
-									{basePath}
-								</a>
-							</span>
-							]]
-						</div>
-					);
+					return <HierarchyItem path={basePath}></HierarchyItem>;
+				})}
+				{props.children.map((childPath) => {
+					return <HierarchyItem path={childPath}></HierarchyItem>;
 				})}
 			</div>
 		</div>
 	) : (
 		<></>
+	);
+};
+
+const HierarchyItem = (props: { path: string }) => {
+	return (
+		<div key={props.path}>
+			[[
+			<span className="cm-hmd-internal-link cm-list-1">
+				<a href={`obsidian://new?file=${props.path}.md&append=true`}>
+					{props.path}
+				</a>
+			</span>
+			]]
+		</div>
 	);
 };
