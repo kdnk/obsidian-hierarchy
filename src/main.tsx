@@ -30,7 +30,6 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async (file) => {
-				console.debug("file-open");
 				this.setTabTitle();
 				await this.setBacklinkTitle({ file });
 				this.activateHierarchyView(file);
@@ -41,6 +40,30 @@ export default class HierarchyPlugin extends Plugin {
 			this.app.metadataCache.on("resolved", async () => {
 				this.resetChildrenCache();
 				this.activateHierarchyView();
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("delete", () => {
+				this.childrenCache = {};
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("create", () => {
+				this.childrenCache = {};
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("rename", () => {
+				this.childrenCache = {};
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("rename", () => {
+				this.childrenCache = {};
 			}),
 		);
 	}
