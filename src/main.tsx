@@ -135,6 +135,7 @@ export default class HierarchyPlugin extends Plugin {
 	async onunload() {
 		this.settings.hierarchyForTabs = false;
 		this.settings.hierarchyForBacklinks = false;
+		this.settings.hierarchyForEditors = false;
 
 		this.activateHierarchyView();
 		this.setTabTitle();
