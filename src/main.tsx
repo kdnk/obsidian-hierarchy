@@ -32,7 +32,7 @@ export default class HierarchyPlugin extends Plugin {
 			this.app.workspace.on("file-open", async (file) => {
 				console.debug("file-open");
 				this.setTabTitle();
-				await this.setBacklinkTitle();
+				await this.setBacklinkTitle({ file });
 				this.activateHierarchyView(file);
 			}),
 		);
@@ -178,10 +178,18 @@ export default class HierarchyPlugin extends Plugin {
 		}
 	}
 
-	private async setBacklinkTitle(loopCount = 0) {
+	private async setBacklinkTitle({
+		file,
+		loopCount = 0,
+	}: {
+		file?: TFile | null;
+		loopCount?: number;
+	} = {}) {
 		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
-		for (const leaf of markdownLeaves) {
+		markdownLeaves.forEach(async (leaf) => {
 			if (!(leaf.view instanceof MarkdownView)) return;
+			if (!leaf.view.file) return;
+			if (file && leaf.view.file.path !== file.path) return;
 
 			const backlinks = leaf.view.backlinks as unknown as {
 				recomputeBacklink: (file: FileView) => void;
@@ -244,9 +252,12 @@ export default class HierarchyPlugin extends Plugin {
 			if (backlinkCountCalulated < backlinkCountFromCache) {
 				if (loopCount < 30) {
 					await sleep(250);
-					await this.setBacklinkTitle(loopCount + 1);
+					await this.setBacklinkTitle({
+						file,
+						loopCount: loopCount + 1,
+					});
 				}
 			}
-		}
+		});
 	}
 }
