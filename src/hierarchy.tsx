@@ -7,13 +7,7 @@ export const Hierarchy = (props: {
 }) => {
 	const [isExpanded, setIsExpanded] = React.useState(true);
 
-	const computeBasePath = (hierarchies: string[]) => {
-		return hierarchies.reduce((acc, curr, index) => {
-			return index === 0 ? curr : `${acc}/${curr}`;
-		}, "");
-	};
-
-	return props.hierarchies.length > 0 ? (
+	return props.hierarchies.length + props.children.length > 0 ? (
 		<div className="hierarchy-wrapper">
 			<div className="nav-header"></div>
 			<div
@@ -29,17 +23,11 @@ export const Hierarchy = (props: {
 				className={`hierarchy-list-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 			>
 				<div className="hierarchy-list">
-					{props.hierarchies.map((_, index) => {
-						if (index === props.hierarchies.length - 1) {
-							return null;
-						}
-						const basePath = computeBasePath(
-							props.hierarchies.slice(0, index + 1),
-						);
+					{props.hierarchies.map((path) => {
 						return (
 							<HierarchyItem
-								key={basePath}
-								path={basePath}
+								key={path}
+								path={path}
 							></HierarchyItem>
 						);
 					})}

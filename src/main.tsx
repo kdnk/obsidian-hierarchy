@@ -107,7 +107,7 @@ export default class HierarchyPlugin extends Plugin {
 			const root = createRoot(newContainer);
 
 			const currentPathName = this.getCleanPathName(leaf.view.file.path);
-			const hierarchies = currentPathName.split("/");
+			const hierarchies = this.getHierarchies(currentPathName);
 			const children = this.getChildren(currentPathName);
 
 			const count = hierarchies.length + children.length;
@@ -150,6 +150,26 @@ export default class HierarchyPlugin extends Plugin {
 			});
 		this.childrenCache[currentPathName] = children;
 		return children;
+	}
+
+	private getHierarchies(pathName: string) {
+		const dirs = pathName.split("/");
+
+		const computePath = (hierarchies: string[]) => {
+			return hierarchies.reduce((acc, curr, index) => {
+				return index === 0 ? curr : `${acc}/${curr}`;
+			}, "");
+		};
+		return pathName
+			.split("/")
+			.map((_, index) => {
+				if (index === dirs.length - 1) {
+					return null;
+				}
+				const path = computePath(dirs.slice(0, index + 1));
+				return path;
+			})
+			.filter((path) => path !== null);
 	}
 
 	private getCleanPathName(path: string) {
