@@ -17,7 +17,7 @@ export const Hierarchy = (props: {
 		<div className="hierarchy-wrapper">
 			<div className="nav-header"></div>
 			<div
-				className={`hierarchy-title-outer ${isExpanded ? "expanded" : "collapsed"}`}
+				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 				onClick={() => setIsExpanded((val) => !val)}
 			>
 				<div className="hierarchy-title">Hierarchy</div>
