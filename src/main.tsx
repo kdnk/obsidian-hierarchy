@@ -110,10 +110,13 @@ export default class HierarchyPlugin extends Plugin {
 			const hierarchies = currentPathName.split("/");
 			const children = this.getChildren(currentPathName);
 
+			const count = hierarchies.length + children.length;
+
 			root.render(
 				<Hierarchy
 					hierarchies={hierarchies}
 					children={children}
+					count={count}
 				></Hierarchy>,
 			);
 		});

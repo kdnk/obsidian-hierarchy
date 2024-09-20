@@ -3,6 +3,7 @@ import * as React from "react";
 export const Hierarchy = (props: {
 	hierarchies: string[];
 	children: string[];
+	count: number;
 }) => {
 	const [isExpanded, setIsExpanded] = React.useState(true);
 
@@ -23,6 +24,9 @@ export const Hierarchy = (props: {
 					onClick={() => setIsExpanded((val) => !val)}
 				>
 					Hierarchy
+				</div>
+				<div className="hierarchy-count-outer">
+					<div className="hierarchy-count">{props.count}</div>
 				</div>
 			</div>
 			<div
