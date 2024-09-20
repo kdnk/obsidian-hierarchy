@@ -169,7 +169,7 @@ export default class HierarchyPlugin extends Plugin {
 				const path = computePath(dirs.slice(0, index + 1));
 				return path;
 			})
-			.filter((path) => path !== null);
+			.filter((path) => path !== null) as string[];
 	}
 
 	private getCleanPathName(path: string) {
