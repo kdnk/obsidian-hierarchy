@@ -58,16 +58,23 @@ If your plugin does not need CSS, delete this file.
 	background-color: var(--nav-item-background-active);
 }
 
-.hierarchy-link-list {
+.hierarchy-list-outer {
 	padding-inline-start: var(--size-4-2);
 	margin-top: var(--size-4-2);
+	display: grid;
+	transition: all var(--anim-duration-superfast);
 }
 
-.hierarchy-list-expanded {
+.hierarchy-list-outer.hierarchy-expanded {
+	grid-template-rows: 1fr;
 }
 
-.hierarchy-list-collapsed {
-	display: none;
+.hierarchy-list-outer.hierarchy-collapsed {
+	grid-template-rows: 0fr;
+}
+
+.hierarchy-list {
+	overflow: hidden;
 }
 
 .hierarchy-count-outer {

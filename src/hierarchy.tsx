@@ -17,43 +17,41 @@ export const Hierarchy = (props: {
 		<div className="hierarchy-wrapper">
 			<div className="nav-header"></div>
 			<div
-				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
+				className={`hierarchy-title-outer ${isExpanded ? "expanded" : "collapsed"}`}
+				onClick={() => setIsExpanded((val) => !val)}
 			>
-				<div
-					className="hierarchy-title"
-					onClick={() => setIsExpanded((val) => !val)}
-				>
-					Hierarchy
-				</div>
+				<div className="hierarchy-title">Hierarchy</div>
 				<div className="hierarchy-count-outer">
 					<div className="hierarchy-count">{props.count}</div>
 				</div>
 			</div>
 			<div
-				className={`hierarchy-link-list ${isExpanded ? "hierarchy-list-expanded" : "hierarchy-list-collapsed"}`}
+				className={`hierarchy-list-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 			>
-				{props.hierarchies.map((_, index) => {
-					if (index === props.hierarchies.length - 1) {
-						return null;
-					}
-					const basePath = computeBasePath(
-						props.hierarchies.slice(0, index + 1),
-					);
-					return (
-						<HierarchyItem
-							key={basePath}
-							path={basePath}
-						></HierarchyItem>
-					);
-				})}
-				{props.children.map((childPath) => {
-					return (
-						<HierarchyItem
-							key={childPath}
-							path={childPath}
-						></HierarchyItem>
-					);
-				})}
+				<div className="hierarchy-list">
+					{props.hierarchies.map((_, index) => {
+						if (index === props.hierarchies.length - 1) {
+							return null;
+						}
+						const basePath = computeBasePath(
+							props.hierarchies.slice(0, index + 1),
+						);
+						return (
+							<HierarchyItem
+								key={basePath}
+								path={basePath}
+							></HierarchyItem>
+						);
+					})}
+					{props.children.map((childPath) => {
+						return (
+							<HierarchyItem
+								key={childPath}
+								path={childPath}
+							></HierarchyItem>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	) : (
