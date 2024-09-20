@@ -140,6 +140,8 @@ export default class HierarchyPlugin extends Plugin {
 
 				const pathName = this.getCleanPathName(file);
 				if (pathName === currentPathName) return false;
+				if (pathName.includes("/attachments/")) return false;
+				if (pathName.startsWith("attachments/")) return false;
 				return isSubdirectory(currentPathName, pathName);
 			})
 			.map((file) => {
