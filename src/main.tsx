@@ -1,6 +1,5 @@
 import {
 	App,
-	FileView,
 	MarkdownView,
 	Plugin,
 	PluginManifest,
@@ -14,6 +13,8 @@ import {
 } from "./settings";
 import { Hierarchy } from "./hierarchy";
 import { createRoot } from "react-dom/client";
+import { isBacklinks } from "./utils/backlinks";
+import { ActiveTabGroup } from "./utils/active-tab-group";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
@@ -203,21 +204,48 @@ export default class HierarchyPlugin extends Plugin {
 
 	private setTabTitle() {
 		if (Platform.isMobile) return;
-		if (!this.app.workspace.activeTabGroup) return;
 
-		const { tabHeaderEls, children } = this.app.workspace
-			.activeTabGroup as unknown as {
-			tabHeaderEls: HTMLElement[];
-			children: { view: { file: TFile } }[];
+		const activeTabGroup = this.app.workspace.activeTabGroup;
+		if (!activeTabGroup) return;
+
+		const isActiveTabGroup = (
+			activeTabGroup: unknown,
+		): activeTabGroup is ActiveTabGroup => {
+			if (typeof activeTabGroup !== "object") return false;
+			if (activeTabGroup === null) return false;
+			if (!("tabHeaderEls" in activeTabGroup)) return false;
+			if (!("children" in activeTabGroup)) return false;
+			if (!Array.isArray(activeTabGroup.tabHeaderEls)) return false;
+			if (
+				!activeTabGroup.tabHeaderEls.every(
+					(el) => el instanceof HTMLElement,
+				)
+			)
+				return false;
+			if (!Array.isArray(activeTabGroup.children)) return false;
+			if (
+				!activeTabGroup.children.every(
+					(child) =>
+						typeof child === "object" &&
+						"view" in child &&
+						"file" in child.view,
+				)
+			)
+				return false;
+			return true;
 		};
 
+		if (!isActiveTabGroup(activeTabGroup)) return;
+		const { tabHeaderEls, children } = activeTabGroup;
 		for (const [index, tabHeaderEl] of tabHeaderEls.entries()) {
+			const child = children[index];
+
 			const titleEl = tabHeaderEl.querySelector(
 				".workspace-tab-header-inner-title",
 			) as HTMLElement;
 			if (titleEl) {
 				if (this.settings.hierarchyForTabs) {
-					if (!children[index].view.file) return;
+					if (!child.view.file) return;
 					titleEl.textContent =
 						children[index].view.file.path.split(".")[0];
 				} else {
@@ -240,26 +268,8 @@ export default class HierarchyPlugin extends Plugin {
 			if (!leaf.view.file) return;
 			if (file && leaf.view.file.path !== file.path) return;
 
-			const backlinks = leaf.view.backlinks as unknown as {
-				recomputeBacklink: (file: FileView) => void;
-				file: FileView;
-				backlinkDom: {
-					vChildren: {
-						children: {
-							el: {
-								firstChild: {
-									find: (selector: string) => HTMLElement;
-								};
-							};
-							file: TFile;
-							result: {
-								content: unknown[];
-								properties: unknown[];
-							};
-						}[];
-					};
-				};
-			};
+			const backlinks = leaf.view.backlinks;
+			if (!isBacklinks(backlinks)) return;
 
 			const sleep = (msec: number) => {
 				return new Promise((resolve) => setTimeout(resolve, msec));
