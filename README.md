@@ -35,12 +35,14 @@ To configure the plugin:
 If you prefer using paths over tags (like I do), I recommend using [Obsidian Linter](https://github.com/platers/obsidian-linter).  
 When you use Obsidian's autocomplete feature to insert paths, it often automatically adds aliases to the links. You can prevent this by using the following regular expressions:
 
-- **Regex to find**: `\[\[([^|]+)\|([^|]+)\]\]`
+- **Regex to find**: `\[\[([^\|\[\n]+)\|([^\|\[\n]+)\]\]`
+- flags: `gm`
 - **Regex to replace**: `[[$1]]`
 
 Additionally, I store all my pages under the `pages/` directory, but I don’t want to start every link with `pages/`. To avoid this, I use the following setting:
 
-- **Regex to find**: `\[\[pages/([^|]+)\]\]`
+- **Regex to find**: `\[\[pages/([^\|\[\n]+)\]\]`
+- flags: `gm`
 - **Regex to replace**: `[[$1]]`
 
 This setup will clean up both aliases and the `pages/` prefix, leaving a simple and clean path for your links.
