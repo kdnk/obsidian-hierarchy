@@ -275,7 +275,7 @@ export default class HierarchyPlugin extends Plugin {
 				return new Promise((resolve) => setTimeout(resolve, msec));
 			};
 
-			const renderTitle = () => {
+			const renderTitleOfLinkedMentions = () => {
 				for (const child of backlinks.backlinkDom.vChildren.children) {
 					const titleEl =
 						child.el.firstChild.find(".tree-item-inner");
@@ -289,7 +289,22 @@ export default class HierarchyPlugin extends Plugin {
 				}
 			};
 
-			renderTitle();
+			const renderTitleOfUnlinkedMentions = () => {
+				for (const child of backlinks.unlinkedDom.vChildren.children) {
+					const titleEl =
+						child.el.firstChild.find(".tree-item-inner");
+					if (titleEl) {
+						if (this.settings.hierarchyForBacklinks) {
+							titleEl.textContent = child.file.path.split(".")[0];
+						} else {
+							titleEl.textContent = child.file.basename;
+						}
+					}
+				}
+			};
+
+			renderTitleOfLinkedMentions();
+			renderTitleOfUnlinkedMentions();
 
 			const currentFile = this.app.workspace.getActiveFile();
 			if (!currentFile) return;
@@ -309,7 +324,7 @@ export default class HierarchyPlugin extends Plugin {
 				);
 
 			if (backlinkCountCalulated < backlinkCountFromCache) {
-				if (loopCount < 30) {
+				if (loopCount < 50) {
 					await sleep(250);
 					await this.setBacklinkTitle({
 						file,
