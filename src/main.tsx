@@ -32,7 +32,7 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", async () => {
-				this.resetChildrenCache();
+				this.childrenCache = {};
 				renderHierarchy(this);
 			}),
 		);
@@ -65,10 +65,6 @@ export default class HierarchyPlugin extends Plugin {
 	async refresh() {
 		patchTabs(this);
 		renderHierarchy(this);
-	}
-
-	private resetChildrenCache() {
-		this.childrenCache = {};
 	}
 
 	async onunload() {
