@@ -1,20 +1,12 @@
-import {
-	App,
-	MarkdownView,
-	Plugin,
-	PluginManifest,
-	TFile,
-	Platform,
-} from "obsidian";
+import { App, Plugin, PluginManifest, Platform } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
-import { Hierarchy } from "./ui/hierarchy";
-import { createRoot } from "react-dom/client";
 import { ActiveTabGroup } from "./utils/active-tab-group";
 import { patchBacklinks } from "./backlinks/patch-backlinks";
+import { renderHierarchy } from "./hierarchy-view/render-hierarchy";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
@@ -34,14 +26,14 @@ export default class HierarchyPlugin extends Plugin {
 		this.registerEvent(
 			this.app.workspace.on("file-open", async (file) => {
 				this.setTabTitle();
-				this.activateHierarchyView(file);
+				renderHierarchy(this, file);
 			}),
 		);
 
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", async () => {
 				this.resetChildrenCache();
-				this.activateHierarchyView();
+				renderHierarchy(this);
 			}),
 		);
 
@@ -72,113 +64,11 @@ export default class HierarchyPlugin extends Plugin {
 
 	async refresh() {
 		this.setTabTitle();
-		this.activateHierarchyView();
+		renderHierarchy(this);
 	}
 
 	private resetChildrenCache() {
 		this.childrenCache = {};
-	}
-
-	private async activateHierarchyView(file?: TFile | null) {
-		const CONTAINER_CLASS = "hierarchy-container";
-		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
-		markdownLeaves.forEach((leaf) => {
-			if (!(leaf.view instanceof MarkdownView)) return;
-			if (!leaf.view.file) return;
-			if (file && leaf.view.file.path !== file.path) return;
-
-			const mainEl = leaf.view.containerEl.querySelector(
-				".cm-contentContainer",
-			);
-			if (!mainEl) return;
-
-			const containers = leaf.view.containerEl.querySelectorAll(
-				"." + CONTAINER_CLASS,
-			);
-
-			if (containers) {
-				containers.forEach((el) => el.remove());
-			}
-
-			if (!this.settings.hierarchyForEditors) return;
-
-			const newContainer = createDiv({ cls: CONTAINER_CLASS });
-			mainEl.after(newContainer);
-
-			const root = createRoot(newContainer);
-
-			const currentPathName = this.getCleanPathName(leaf.view.file.path);
-			const hierarchies = this.getHierarchies(currentPathName);
-			const children = this.getChildren(currentPathName);
-
-			const count = hierarchies.length + children.length;
-
-			root.render(
-				<Hierarchy
-					hierarchies={hierarchies}
-					children={children}
-					count={count}
-				></Hierarchy>,
-			);
-		});
-	}
-
-	private getChildren(currentPathName: string) {
-		const files = this.app.metadataCache.getCachedFiles();
-		if (this.childrenCache[currentPathName]) {
-			return this.childrenCache[currentPathName];
-		}
-
-		const children = files
-			.filter((file) => {
-				function isSubdirectory(parentDir: string, subDir: string) {
-					return (
-						subDir.startsWith(parentDir) &&
-						(subDir[parentDir.length] === "/" ||
-							parentDir.length === subDir.length)
-					);
-				}
-
-				const pathName = this.getCleanPathName(file);
-				if (pathName === currentPathName) return false;
-				if (pathName.includes("/attachments/")) return false;
-				if (pathName.startsWith("attachments/")) return false;
-				return isSubdirectory(currentPathName, pathName);
-			})
-			.map((file) => {
-				const pathName = this.getCleanPathName(file);
-				return pathName;
-			});
-		this.childrenCache[currentPathName] = children;
-		return children;
-	}
-
-	private getHierarchies(pathName: string) {
-		const dirs = pathName.split("/");
-
-		const computePath = (hierarchies: string[]) => {
-			return hierarchies.reduce((acc, curr, index) => {
-				return index === 0 ? curr : `${acc}/${curr}`;
-			}, "");
-		};
-		return pathName
-			.split("/")
-			.map((_, index) => {
-				if (index === dirs.length - 1) {
-					return null;
-				}
-				const path = computePath(dirs.slice(0, index + 1));
-				return path;
-			})
-			.filter((path) => path !== null) as string[];
-	}
-
-	private getCleanPathName(path: string) {
-		let pathName = path.split(".")[0];
-		if (pathName.startsWith("pages/")) {
-			pathName = pathName.slice(6);
-		}
-		return pathName;
 	}
 
 	async onunload() {
@@ -186,7 +76,7 @@ export default class HierarchyPlugin extends Plugin {
 		this.settings.hierarchyForBacklinks = false;
 		this.settings.hierarchyForEditors = false;
 
-		this.activateHierarchyView();
+		renderHierarchy(this);
 		this.setTabTitle();
 	}
 
