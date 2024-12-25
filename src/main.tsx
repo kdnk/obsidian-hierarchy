@@ -13,7 +13,7 @@ import {
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
-import { Hierarchy } from "./hierarchy";
+import { Hierarchy } from "./ui/hierarchy";
 import { createRoot } from "react-dom/client";
 import { ActiveTabGroup } from "./utils/active-tab-group";
 import { hasBacklinks, isBacklinks } from "./utils/backlinks";
