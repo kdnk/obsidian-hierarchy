@@ -58,6 +58,12 @@ To bump the version, run `npm version patch` or `npm version minor` or `npm vers
 
 Contributions are welcome! If you have ideas, feature requests, or bug reports, feel free to open an issue or submit a pull request.
 
+## Thanks
+
+Some code around the backlinks are inspired by the [Owner avatar
+better-search-views
+](https://github.com/ivan-lednev/better-search-views).
+
 ## License
 
 This plugin is open-source and available under the MIT License.
