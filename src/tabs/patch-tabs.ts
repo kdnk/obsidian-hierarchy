@@ -39,14 +39,5 @@ function isActiveTabGroup(
 	if (!activeTabGroup.tabHeaderEls.every((el) => el instanceof HTMLElement))
 		return false;
 	if (!Array.isArray(activeTabGroup.children)) return false;
-	if (
-		!activeTabGroup.children.every(
-			(child) =>
-				typeof child === "object" &&
-				"view" in child &&
-				"file" in child.view,
-		)
-	)
-		return false;
 	return true;
 }
