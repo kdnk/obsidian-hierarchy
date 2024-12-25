@@ -1,11 +1,11 @@
-import { App, Plugin, PluginManifest, Platform } from "obsidian";
+import { App, Plugin, PluginManifest } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	HierarchySettings,
 	HierarchyPluginSettingsTab,
 } from "./settings";
-import { ActiveTabGroup } from "./utils/active-tab-group";
 import { patchBacklinks } from "./backlinks/patch-backlinks";
+import { patchTabs } from "./tabs/patch-tabs";
 import { renderHierarchy } from "./hierarchy-view/render-hierarchy";
 
 export default class HierarchyPlugin extends Plugin {
@@ -25,7 +25,7 @@ export default class HierarchyPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async (file) => {
-				this.setTabTitle();
+				patchTabs(this);
 				renderHierarchy(this, file);
 			}),
 		);
@@ -63,7 +63,7 @@ export default class HierarchyPlugin extends Plugin {
 	}
 
 	async refresh() {
-		this.setTabTitle();
+		patchTabs(this);
 		renderHierarchy(this);
 	}
 
@@ -77,7 +77,7 @@ export default class HierarchyPlugin extends Plugin {
 		this.settings.hierarchyForEditors = false;
 
 		renderHierarchy(this);
-		this.setTabTitle();
+		patchTabs(this);
 	}
 
 	async loadSettings() {
@@ -89,58 +89,5 @@ export default class HierarchyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	private setTabTitle() {
-		if (Platform.isMobile) return;
-
-		const activeTabGroup = this.app.workspace.activeTabGroup;
-		if (!activeTabGroup) return;
-
-		const isActiveTabGroup = (
-			activeTabGroup: unknown,
-		): activeTabGroup is ActiveTabGroup => {
-			if (typeof activeTabGroup !== "object") return false;
-			if (activeTabGroup === null) return false;
-			if (!("tabHeaderEls" in activeTabGroup)) return false;
-			if (!("children" in activeTabGroup)) return false;
-			if (!Array.isArray(activeTabGroup.tabHeaderEls)) return false;
-			if (
-				!activeTabGroup.tabHeaderEls.every(
-					(el) => el instanceof HTMLElement,
-				)
-			)
-				return false;
-			if (!Array.isArray(activeTabGroup.children)) return false;
-			if (
-				!activeTabGroup.children.every(
-					(child) =>
-						typeof child === "object" &&
-						"view" in child &&
-						"file" in child.view,
-				)
-			)
-				return false;
-			return true;
-		};
-
-		if (!isActiveTabGroup(activeTabGroup)) return;
-		const { tabHeaderEls, children } = activeTabGroup;
-		for (const [index, tabHeaderEl] of tabHeaderEls.entries()) {
-			const child = children[index];
-
-			const titleEl = tabHeaderEl.querySelector(
-				".workspace-tab-header-inner-title",
-			) as HTMLElement;
-			if (titleEl) {
-				if (this.settings.hierarchyForTabs) {
-					if (!child.view.file) return;
-					titleEl.textContent =
-						children[index].view.file.path.split(".")[0];
-				} else {
-					titleEl.textContent = children[index].view.file.basename;
-				}
-			}
-		}
 	}
 }
