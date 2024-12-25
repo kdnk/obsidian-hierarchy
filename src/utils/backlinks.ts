@@ -52,6 +52,7 @@ export const isBacklinks = (backlinks: unknown): backlinks is Backlinks => {
 	return true;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const hasBacklinks = (backlinks: any): backlinks is Backlinks => {
 	const ret = !!backlinks?.backlinkDom;
 	return ret;
