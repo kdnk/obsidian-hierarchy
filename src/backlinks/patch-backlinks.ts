@@ -8,7 +8,6 @@ export function patchBacklinks(plugin: HierarchyPlugin) {
 		around(Component.prototype, {
 			addChild(old: Component["addChild"]) {
 				return function (child: unknown, ...args: unknown[]) {
-					console.log(`[backlink-patcher.ts:12] child: `, child);
 					if (hasBacklinks(child)) {
 						try {
 							patchBacklinkDom(plugin, child.backlinkDom);
@@ -37,7 +36,6 @@ function patchBacklinkDom(plugin: HierarchyPlugin, dom: any) {
 			addResult(old: any) {
 				return function (...args: unknown[]) {
 					const result = old.call(this, ...args);
-					console.log(`[main.tsx:105] result: `, result);
 					try {
 						patchBacklinkTitle(plugin, result);
 					} catch (error) {

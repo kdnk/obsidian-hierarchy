@@ -14,7 +14,7 @@ import {
 import { Hierarchy } from "./ui/hierarchy";
 import { createRoot } from "react-dom/client";
 import { ActiveTabGroup } from "./utils/active-tab-group";
-import { patchBacklinks } from "./patcher/patch-backlinks";
+import { patchBacklinks } from "./backlinks/patch-backlinks";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
