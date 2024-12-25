@@ -5,7 +5,9 @@ import {
 	PluginManifest,
 	TFile,
 	Platform,
+	Component,
 } from "obsidian";
+import { around } from "monkey-around";
 import {
 	DEFAULT_SETTINGS,
 	HierarchySettings,
@@ -13,12 +15,15 @@ import {
 } from "./settings";
 import { Hierarchy } from "./hierarchy";
 import { createRoot } from "react-dom/client";
-import { isBacklinks } from "./utils/backlinks";
 import { ActiveTabGroup } from "./utils/active-tab-group";
+import { hasBacklinks, isBacklinks } from "./utils/backlinks";
 
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
 	childrenCache: Record<string, string[]>;
+	private triedPatching = false;
+	private triedPatchingRenderContentMatches = false;
+	private wrappedItems = new WeakMap();
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -28,6 +33,8 @@ export default class HierarchyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
+
+		this.patchBacklinks();
 
 		this.registerEvent(
 			this.app.workspace.on("file-open", async (file) => {
@@ -67,6 +74,70 @@ export default class HierarchyPlugin extends Plugin {
 				this.childrenCache = {};
 			}),
 		);
+	}
+
+	private patchBacklinks() {
+		const that = this;
+		this.register(
+			around(Component.prototype, {
+				addChild(old: Component["addChild"]) {
+					return function (child: unknown, ...args: unknown[]) {
+						if (hasBacklinks(child)) {
+							try {
+								that.patchBacklinkDom(child.backlinkDom);
+								return old.call(this, child, ...args);
+							} catch (error) {
+								console.error(
+									"rror while patching Obsidian internals: ",
+									error,
+								);
+								return old.call(this, child, ...args);
+							}
+						} else {
+							return old.call(this, child, ...args);
+						}
+					};
+				},
+			}),
+		);
+	}
+
+	private patchBacklinkDom(dom: any) {
+		const that = this;
+		this.register(
+			around(dom.constructor.prototype, {
+				addResult(old: any) {
+					return function (...args: any[]) {
+						const result = old.call(this, ...args);
+						console.log(`[main.tsx:105] result: `, result);
+						try {
+							that.patchBacklinkTitle(result);
+						} catch (error) {
+							console.error(
+								"rror while patching Obsidian internals: ",
+								error,
+							);
+						}
+						return result;
+					};
+				},
+				emptyResults(old: any) {
+					return function (...args: any[]) {
+						return old.call(this, ...args);
+					};
+				},
+			}),
+		);
+	}
+
+	private patchBacklinkTitle(item: any): void {
+		const titleEl = item.el.firstChild.find(".tree-item-inner");
+
+		if (this.settings.hierarchyForBacklinks) {
+			titleEl.textContent = item.file.path.split(".")[0];
+		} else {
+			titleEl.textContent = item.file.basename;
+		}
 	}
 
 	async refresh() {
@@ -262,76 +333,76 @@ export default class HierarchyPlugin extends Plugin {
 		file?: TFile | null;
 		loopCount?: number;
 	} = {}) {
-		const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
-		markdownLeaves.forEach(async (leaf) => {
-			if (!(leaf.view instanceof MarkdownView)) return;
-			if (!leaf.view.file) return;
-			if (file && leaf.view.file.path !== file.path) return;
-
-			const backlinks = leaf.view.backlinks;
-			if (!isBacklinks(backlinks)) return;
-
-			const sleep = (msec: number) => {
-				return new Promise((resolve) => setTimeout(resolve, msec));
-			};
-
-			const renderTitleOfLinkedMentions = () => {
-				for (const child of backlinks.backlinkDom.vChildren.children) {
-					const titleEl =
-						child.el.firstChild.find(".tree-item-inner");
-					if (titleEl) {
-						if (this.settings.hierarchyForBacklinks) {
-							titleEl.textContent = child.file.path.split(".")[0];
-						} else {
-							titleEl.textContent = child.file.basename;
-						}
-					}
-				}
-			};
-
-			const renderTitleOfUnlinkedMentions = () => {
-				for (const child of backlinks.unlinkedDom.vChildren.children) {
-					const titleEl =
-						child.el.firstChild.find(".tree-item-inner");
-					if (titleEl) {
-						if (this.settings.hierarchyForBacklinks) {
-							titleEl.textContent = child.file.path.split(".")[0];
-						} else {
-							titleEl.textContent = child.file.basename;
-						}
-					}
-				}
-			};
-
-			renderTitleOfLinkedMentions();
-			renderTitleOfUnlinkedMentions();
-
-			const currentFile = this.app.workspace.getActiveFile();
-			if (!currentFile) return;
-			const backlinkCountFromCache = this.app.metadataCache
-				.getBacklinksForFile(currentFile)
-				.count();
-			const backlinkCountCalulated =
-				backlinks.backlinkDom.vChildren.children.reduce(
-					(acc, child) => {
-						return (
-							acc +
-							child.result.content.length +
-							child.result.properties.length
-						);
-					},
-					0,
-				);
-
-			if (backlinkCountCalulated < backlinkCountFromCache) {
-				if (loopCount < 50) {
-					await sleep(250);
-					await this.setBacklinkTitle({
-						file,
-						loopCount: loopCount + 1,
-					});
-				}
-			}
-		});
+		// const markdownLeaves = this.app.workspace.getLeavesOfType("markdown");
+		// markdownLeaves.forEach(async (leaf) => {
+		// 	if (!(leaf.view instanceof MarkdownView)) return;
+		// 	if (!leaf.view.file) return;
+		// 	if (file && leaf.view.file.path !== file.path) return;
+		//
+		// 	const backlinks = leaf.view.backlinks;
+		// 	if (!isBacklinks(backlinks)) return;
+		//
+		// 	const sleep = (msec: number) => {
+		// 		return new Promise((resolve) => setTimeout(resolve, msec));
+		// 	};
+		//
+		// 	const renderTitleOfLinkedMentions = () => {
+		// 		for (const child of backlinks.backlinkDom.vChildren.children) {
+		// 			const titleEl =
+		// 				child.el.firstChild.find(".tree-item-inner");
+		// 			if (titleEl) {
+		// 				if (this.settings.hierarchyForBacklinks) {
+		// 					titleEl.textContent = child.file.path.split(".")[0];
+		// 				} else {
+		// 					titleEl.textContent = child.file.basename;
+		// 				}
+		// 			}
+		// 		}
+		// 	};
+		//
+		// 	const renderTitleOfUnlinkedMentions = () => {
+		// 		for (const child of backlinks.unlinkedDom.vChildren.children) {
+		// 			const titleEl =
+		// 				child.el.firstChild.find(".tree-item-inner");
+		// 			if (titleEl) {
+		// 				if (this.settings.hierarchyForBacklinks) {
+		// 					titleEl.textContent = child.file.path.split(".")[0];
+		// 				} else {
+		// 					titleEl.textContent = child.file.basename;
+		// 				}
+		// 			}
+		// 		}
+		// 	};
+		//
+		// 	renderTitleOfLinkedMentions();
+		// 	renderTitleOfUnlinkedMentions();
+		//
+		// 	const currentFile = this.app.workspace.getActiveFile();
+		// 	if (!currentFile) return;
+		// 	const backlinkCountFromCache = this.app.metadataCache
+		// 		.getBacklinksForFile(currentFile)
+		// 		.count();
+		// 	const backlinkCountCalulated =
+		// 		backlinks.backlinkDom.vChildren.children.reduce(
+		// 			(acc, child) => {
+		// 				return (
+		// 					acc +
+		// 					child.result.content.length +
+		// 					child.result.properties.length
+		// 				);
+		// 			},
+		// 			0,
+		// 		);
+		//
+		// 	if (backlinkCountCalulated < backlinkCountFromCache) {
+		// 		if (loopCount < 50) {
+		// 			await sleep(250);
+		// 			await this.setBacklinkTitle({
+		// 				file,
+		// 				loopCount: loopCount + 1,
+		// 			});
+		// 		}
+		// 	}
+		// });
 	}
 }

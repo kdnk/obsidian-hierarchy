@@ -37,6 +37,7 @@ export type Backlinks = {
 };
 
 export const isBacklinks = (backlinks: unknown): backlinks is Backlinks => {
+	console.log(`[backlinks.ts:40] backlinks: `, backlinks);
 	if (typeof backlinks !== "object") return false;
 	if (backlinks === null) return false;
 
@@ -48,13 +49,10 @@ export const isBacklinks = (backlinks: unknown): backlinks is Backlinks => {
 	if (!(typeof backlinks.backlinkDom.vChildren === "object")) return false;
 	if (backlinks.backlinkDom.vChildren === null) return false;
 	if (!("children" in backlinks.backlinkDom.vChildren)) return false;
-
-	if (!("unlinkedDom" in backlinks)) return false;
-	if (!(typeof backlinks.unlinkedDom === "object")) return false;
-	if (backlinks.unlinkedDom === null) return false;
-	if (!("vChildren" in backlinks.unlinkedDom)) return false;
-	if (!(typeof backlinks.unlinkedDom.vChildren === "object")) return false;
-	if (backlinks.unlinkedDom.vChildren === null) return false;
-	if (!("children" in backlinks.unlinkedDom.vChildren)) return false;
 	return true;
+};
+
+export const hasBacklinks = (backlinks: any): backlinks is Backlinks => {
+	const ret = !!backlinks?.backlinkDom;
+	return ret;
 };
