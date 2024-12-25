@@ -54,12 +54,6 @@ export default class HierarchyPlugin extends Plugin {
 				this.childrenCache = {};
 			}),
 		);
-
-		this.registerEvent(
-			this.app.vault.on("rename", () => {
-				this.childrenCache = {};
-			}),
-		);
 	}
 
 	async refresh() {
