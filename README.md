@@ -50,6 +50,10 @@ This setup will clean up both aliases and the `pages/` prefix, leaving a simple 
 ref. https://platers.github.io/obsidian-linter/settings/custom-rules/#custom-regex-replacements
 <img width="500px" src="https://github.com/user-attachments/assets/7ee3f1e8-6f78-44b9-bf80-59c134778555" />
 
+## Dev
+
+To bump the version, run `npm version patch` or `npm version minor` or `npm version major`. This will bump the version in `package.json`, create a new git tag, and push the changes to the repository.
+
 ## Contributing
 
 Contributions are welcome! If you have ideas, feature requests, or bug reports, feel free to open an issue or submit a pull request.
