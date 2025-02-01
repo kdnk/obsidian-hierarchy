@@ -33,24 +33,28 @@ export default class HierarchyPlugin extends Plugin {
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", async () => {
 				this.childrenCache = {};
+				patchTabs(this);
 				renderHierarchy(this);
 			}),
 		);
 
 		this.registerEvent(
 			this.app.vault.on("delete", () => {
+				patchTabs(this);
 				this.childrenCache = {};
 			}),
 		);
 
 		this.registerEvent(
 			this.app.vault.on("create", () => {
+				patchTabs(this);
 				this.childrenCache = {};
 			}),
 		);
 
 		this.registerEvent(
 			this.app.vault.on("rename", () => {
+				patchTabs(this);
 				this.childrenCache = {};
 			}),
 		);
