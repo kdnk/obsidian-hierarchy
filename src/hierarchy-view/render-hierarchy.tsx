@@ -69,6 +69,7 @@ function getChildren(plugin: HierarchyPlugin, currentPathName: string) {
 
 			const pathName = getCleanPathName(file);
 			if (pathName === currentPathName) return false;
+			if (pathName === 'journals') return false;
 			if (pathName.includes("/attachments/")) return false;
 			if (pathName.startsWith("attachments/")) return false;
 			return isSubdirectory(currentPathName, pathName);
