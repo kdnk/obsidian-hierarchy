@@ -15,10 +15,14 @@ export function renderHierarchy(
 		if (!leaf.view.file) return;
 		if (file && leaf.view.file.path !== file.path) return;
 
-		const mainEl = leaf.view.containerEl.querySelector(".cm-contentContainer");
+		const mainEl = leaf.view.containerEl.querySelector(
+			".cm-contentContainer",
+		);
 		if (!mainEl) return;
 
-		const containers = leaf.view.containerEl.querySelectorAll("." + CONTAINER_CLASS);
+		const containers = leaf.view.containerEl.querySelectorAll(
+			"." + CONTAINER_CLASS,
+		);
 		if (containers) {
 			containers.forEach((el) => el.remove());
 		}
@@ -31,8 +35,15 @@ export function renderHierarchy(
 		const root = createRoot(newContainer);
 
 		// Clean the path using hierarchyCleanPathPrefixes.
-		const currentPathName = getCleanPathName(leaf.view.file.path, plugin.settings.hierarchyCleanPathPrefixes);
-		const hierarchies = getHierarchies(currentPathName);
+		const currentPathName = getCleanPathName(
+			leaf.view.file.path,
+			plugin.settings.hierarchyCleanPathPrefixes,
+		);
+		// Pass the hierarchyExcludePaths to filter out intermediate directories.
+		const hierarchies = getHierarchies(
+			currentPathName,
+			plugin.settings.hierarchyExcludePaths,
+		);
 		const children = getChildren(plugin, currentPathName);
 
 		const count = hierarchies.length + children.length;
@@ -58,13 +69,18 @@ function getChildren(plugin: HierarchyPlugin, currentPathName: string) {
 			function isSubdirectory(parentDir: string, subDir: string) {
 				return (
 					subDir.startsWith(parentDir) &&
-					(subDir[parentDir.length] === "/" || parentDir.length === subDir.length)
+					(subDir[parentDir.length] === "/" ||
+						parentDir.length === subDir.length)
 				);
 			}
 
 			// Clean the path using hierarchyCleanPathPrefixes.
-			const pathName = getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes);
+			const pathName = getCleanPathName(
+				file,
+				plugin.settings.hierarchyCleanPathPrefixes,
+			);
 			if (pathName === currentPathName) return false;
+			// Exclude paths matching any hierarchyExcludePaths.
 			if (
 				plugin.settings.hierarchyExcludePaths.some((exclude) =>
 					pathName.startsWith(exclude),
@@ -74,20 +90,25 @@ function getChildren(plugin: HierarchyPlugin, currentPathName: string) {
 			}
 			return isSubdirectory(currentPathName, pathName);
 		})
-		.map((file) => getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes));
+		.map((file) =>
+			getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes),
+		);
 	plugin.childrenCache[currentPathName] = children;
 	return children;
 }
 
-function getHierarchies(pathName: string) {
+function getHierarchies(pathName: string, excludePaths: string[]): string[] {
 	const dirs = pathName.split("/");
 
 	const computePath = (hierarchies: string[]) => {
-		return hierarchies.reduce((acc, curr, index) => {
-			return index === 0 ? curr : `${acc}/${curr}`;
-		}, "");
+		return hierarchies.reduce(
+			(acc, curr, index) => (index === 0 ? curr : `${acc}/${curr}`),
+			"",
+		);
 	};
-	return pathName
+
+	// Generate intermediate hierarchy paths.
+	const hierarchies = pathName
 		.split("/")
 		.map((_, index) => {
 			if (index === dirs.length - 1) {
@@ -97,6 +118,11 @@ function getHierarchies(pathName: string) {
 			return path;
 		})
 		.filter((path) => path !== null) as string[];
+
+	// Filter out any hierarchy paths that start with any of the excluded prefixes.
+	return hierarchies.filter((hierarchy) => {
+		return !excludePaths.some((exclude) => hierarchy.startsWith(exclude));
+	});
 }
 
 /**
