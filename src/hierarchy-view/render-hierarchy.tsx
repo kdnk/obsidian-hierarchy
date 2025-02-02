@@ -15,15 +15,10 @@ export function renderHierarchy(
 		if (!leaf.view.file) return;
 		if (file && leaf.view.file.path !== file.path) return;
 
-		const mainEl = leaf.view.containerEl.querySelector(
-			".cm-contentContainer",
-		);
+		const mainEl = leaf.view.containerEl.querySelector(".cm-contentContainer");
 		if (!mainEl) return;
 
-		const containers = leaf.view.containerEl.querySelectorAll(
-			"." + CONTAINER_CLASS,
-		);
-
+		const containers = leaf.view.containerEl.querySelectorAll("." + CONTAINER_CLASS);
 		if (containers) {
 			containers.forEach((el) => el.remove());
 		}
@@ -35,7 +30,8 @@ export function renderHierarchy(
 
 		const root = createRoot(newContainer);
 
-		const currentPathName = getCleanPathName(leaf.view.file.path);
+		// Clean the path using hierarchyCleanPathPrefixes.
+		const currentPathName = getCleanPathName(leaf.view.file.path, plugin.settings.hierarchyCleanPathPrefixes);
 		const hierarchies = getHierarchies(currentPathName);
 		const children = getChildren(plugin, currentPathName);
 
@@ -62,22 +58,23 @@ function getChildren(plugin: HierarchyPlugin, currentPathName: string) {
 			function isSubdirectory(parentDir: string, subDir: string) {
 				return (
 					subDir.startsWith(parentDir) &&
-					(subDir[parentDir.length] === "/" ||
-						parentDir.length === subDir.length)
+					(subDir[parentDir.length] === "/" || parentDir.length === subDir.length)
 				);
 			}
 
-			const pathName = getCleanPathName(file);
+			// Clean the path using hierarchyCleanPathPrefixes.
+			const pathName = getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes);
 			if (pathName === currentPathName) return false;
-			if (pathName === 'journals') return false;
-			if (pathName.includes("/attachments/")) return false;
-			if (pathName.startsWith("attachments/")) return false;
+			if (
+				plugin.settings.hierarchyExcludePaths.some((exclude) =>
+					pathName.startsWith(exclude),
+				)
+			) {
+				return false;
+			}
 			return isSubdirectory(currentPathName, pathName);
 		})
-		.map((file) => {
-			const pathName = getCleanPathName(file);
-			return pathName;
-		});
+		.map((file) => getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes));
 	plugin.childrenCache[currentPathName] = children;
 	return children;
 }
@@ -102,10 +99,23 @@ function getHierarchies(pathName: string) {
 		.filter((path) => path !== null) as string[];
 }
 
-function getCleanPathName(path: string) {
+/**
+ * Cleans the provided file path.
+ * Removes any file extension and strips any of the configured hierarchyCleanPathPrefixes if the path starts with one.
+ *
+ * @param path - The original file path.
+ * @param prefixes - An array of prefixes to remove.
+ * @returns The cleaned path name.
+ */
+function getCleanPathName(path: string, prefixes: string[]): string {
+	// Remove file extension if present.
 	let pathName = path.split(".")[0];
-	if (pathName.startsWith("pages/")) {
-		pathName = pathName.slice(6);
+	// Remove any configured prefix if the path starts with it.
+	for (const prefix of prefixes) {
+		if (pathName.startsWith(prefix)) {
+			pathName = pathName.slice(prefix.length);
+			break;
+		}
 	}
 	return pathName;
 }
