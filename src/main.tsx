@@ -5,7 +5,7 @@ import {
 	HierarchyPluginSettingsTab,
 } from "./settings";
 import { patchBacklinks } from "./backlinks/patch-backlinks";
-import { patchTabs } from "./tabs/patch-tabs";
+import { patchAllTabs } from "./tabs/patch-tabs";
 import { renderHierarchy } from "./hierarchy-view/render-hierarchy";
 
 export default class HierarchyPlugin extends Plugin {
@@ -23,45 +23,42 @@ export default class HierarchyPlugin extends Plugin {
 
 		patchBacklinks(this);
 
-		this.registerEvent(
-			this.app.workspace.on("file-open", async (file) => {
-				patchTabs(this);
-				renderHierarchy(this, file);
-			}),
-		);
+		this.app.workspace.onLayoutReady(() => {
+			patchAllTabs(this);
+
+			this.registerEvent(
+				this.app.workspace.on("file-open", async (file) => {
+					patchAllTabs(this);
+					renderHierarchy(this, file);
+				}),
+			);
+
+			this.registerEvent(
+				this.app.metadataCache.on("resolved", async () => {
+					this.childrenCache = {};
+					patchAllTabs(this);
+					renderHierarchy(this);
+				}),
+			);
+
+			this.registerEvent(
+				this.app.vault.on("create", () => {
+					patchAllTabs(this);
+					this.childrenCache = {};
+				}),
+			);
+		});
 
 		this.registerEvent(
-			this.app.metadataCache.on("resolved", async () => {
-				this.childrenCache = {};
-				patchTabs(this);
-				renderHierarchy(this);
-			}),
-		);
-
-		this.registerEvent(
-			this.app.vault.on("delete", () => {
-				patchTabs(this);
-				this.childrenCache = {};
-			}),
-		);
-
-		this.registerEvent(
-			this.app.vault.on("create", () => {
-				patchTabs(this);
-				this.childrenCache = {};
-			}),
-		);
-
-		this.registerEvent(
-			this.app.vault.on("rename", () => {
-				patchTabs(this);
+			this.app.workspace.on("layout-change", () => {
+				patchAllTabs(this);
 				this.childrenCache = {};
 			}),
 		);
 	}
 
 	async refresh() {
-		patchTabs(this);
+		patchAllTabs(this);
 		renderHierarchy(this);
 	}
 
@@ -71,7 +68,7 @@ export default class HierarchyPlugin extends Plugin {
 		this.settings.hierarchyForEditors = false;
 
 		renderHierarchy(this);
-		patchTabs(this);
+		patchAllTabs(this);
 	}
 
 	async loadSettings() {
