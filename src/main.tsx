@@ -34,10 +34,16 @@ export default class HierarchyPlugin extends Plugin {
 			);
 
 			this.registerEvent(
+				this.app.workspace.on("active-leaf-change", async () => {
+					this.childrenCache = {};
+					patchAllTabs(this);
+				}),
+			);
+
+			this.registerEvent(
 				this.app.metadataCache.on("resolved", async () => {
 					this.childrenCache = {};
 					patchAllTabs(this);
-					renderHierarchy(this);
 				}),
 			);
 
@@ -47,14 +53,14 @@ export default class HierarchyPlugin extends Plugin {
 					this.childrenCache = {};
 				}),
 			);
-		});
 
-		this.registerEvent(
-			this.app.workspace.on("layout-change", () => {
-				patchAllTabs(this);
-				this.childrenCache = {};
-			}),
-		);
+			this.registerEvent(
+				this.app.workspace.on("layout-change", () => {
+					patchAllTabs(this);
+					this.childrenCache = {};
+				}),
+			);
+		});
 	}
 
 	async refresh() {
