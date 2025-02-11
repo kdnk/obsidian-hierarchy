@@ -1,7 +1,7 @@
 {
 	"id": "hierarchy",
 	"name": "Hierarchy",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"minAppVersion": "0.17.0",
 	"description": "Display the hierarchy instead of just the file name.",
 	"author": "Kodai Nakamura",
