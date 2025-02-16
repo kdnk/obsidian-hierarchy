@@ -89,13 +89,13 @@ export function patchAllTabs(plugin: HierarchyPlugin) {
 			if (!filePath) continue;
 
 			if (plugin.settings.hierarchyForTabs) {
-				// In hierarchy mode, display the full file path without the extension
-				titleEl.textContent = filePath.split(".")[0];
+				// split .md file extension from file name
+				titleEl.textContent = filePath.split(".md")[0];
 			} else {
 				// Otherwise, display only the base name of the file
 				const parts = filePath.split("/");
 				const basenameWithExt = parts[parts.length - 1];
-				const basename = basenameWithExt.split(".")[0];
+				const basename = basenameWithExt.split(".md")[0];
 				titleEl.textContent = basename;
 			}
 		}
