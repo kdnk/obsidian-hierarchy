@@ -26,6 +26,9 @@ export default class HierarchyPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			patchAllTabs(this);
 
+			const file = this.app.workspace.getActiveFile();
+			renderHierarchy(this, file);
+
 			this.registerEvent(
 				this.app.workspace.on("file-open", async (file) => {
 					patchAllTabs(this);
