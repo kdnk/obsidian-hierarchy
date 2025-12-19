@@ -1,4 +1,4 @@
-import { App, Plugin, PluginManifest } from "obsidian";
+import { App, Plugin, PluginManifest, TFile } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	HierarchySettings,
@@ -26,9 +26,6 @@ export default class HierarchyPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			patchAllTabs(this);
 
-			const file = this.app.workspace.getActiveFile();
-			renderHierarchy(this, file);
-
 			this.registerEvent(
 				this.app.workspace.on("file-open", async (file) => {
 					patchAllTabs(this);
@@ -45,6 +42,17 @@ export default class HierarchyPlugin extends Plugin {
 
 			this.registerEvent(
 				this.app.metadataCache.on("resolved", async () => {
+					const leaves =
+						this.app.workspace.getLeavesOfType("markdown");
+
+					for (const leaf of leaves) {
+						const file = (leaf.view as any).file as
+							| TFile
+							| undefined;
+						if (!file) continue;
+						renderHierarchy(this, file);
+					}
+
 					this.childrenCache = {};
 					patchAllTabs(this);
 				}),
