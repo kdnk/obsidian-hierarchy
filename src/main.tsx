@@ -68,6 +68,7 @@ export default class HierarchyPlugin extends Plugin {
 			this.registerEvent(
 				this.app.workspace.on("layout-change", () => {
 					patchAllTabs(this);
+					renderHierarchy(this);
 					this.childrenCache = {};
 				}),
 			);

@@ -8,7 +8,7 @@ import type { ActiveTabGroup } from "../utils/active-tab-group";
  */
 function isWorkspaceWithRootSplit(
 	workspace: unknown,
-): workspace is { rootSplit: { children: ActiveTabGroup[] } } {
+): workspace is { rootSplit: { children: unknown[] } } {
 	if (
 		workspace !== null &&
 		typeof workspace === "object" &&
@@ -20,6 +20,42 @@ function isWorkspaceWithRootSplit(
 		}
 	}
 	return false;
+}
+
+/**
+ * Type guard that checks whether the given object is an ActiveTabGroup
+ * (has tabHeaderEls array).
+ */
+function isActiveTabGroup(obj: unknown): obj is ActiveTabGroup {
+	if (obj !== null && typeof obj === "object" && "tabHeaderEls" in obj) {
+		return Array.isArray(Reflect.get(obj, "tabHeaderEls"));
+	}
+	return false;
+}
+
+/**
+ * Recursively collects all ActiveTabGroup instances from the workspace tree.
+ * When tabs are split, rootSplit.children contains nested split objects
+ * rather than direct tab groups.
+ */
+function collectTabGroups(node: unknown): ActiveTabGroup[] {
+	const groups: ActiveTabGroup[] = [];
+	if (isActiveTabGroup(node)) {
+		groups.push(node);
+	}
+	if (
+		node !== null &&
+		typeof node === "object" &&
+		"children" in node
+	) {
+		const children = Reflect.get(node, "children");
+		if (Array.isArray(children)) {
+			for (const child of children) {
+				groups.push(...collectTabGroups(child));
+			}
+		}
+	}
+	return groups;
 }
 
 /**
@@ -75,8 +111,11 @@ export function patchAllTabs(plugin: HierarchyPlugin) {
 	// Destructure the rootSplit (guaranteed by the type guard)
 	const { rootSplit } = workspace;
 
-	// Iterate through all tab groups in the root split
-	for (const group of rootSplit.children) {
+	// Recursively collect all tab groups (handles nested splits)
+	const tabGroups = collectTabGroups(rootSplit);
+
+	// Iterate through all tab groups
+	for (const group of tabGroups) {
 		// For each tab header element and its corresponding child view:
 		for (const [index, tabHeaderEl] of group.tabHeaderEls.entries()) {
 			const child = group.children[index];
