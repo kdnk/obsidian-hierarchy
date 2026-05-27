@@ -37,7 +37,6 @@ export type Backlinks = {
 };
 
 export const isBacklinks = (backlinks: unknown): backlinks is Backlinks => {
-	console.log(`[backlinks.ts:40] backlinks: `, backlinks);
 	if (typeof backlinks !== "object") return false;
 	if (backlinks === null) return false;
 
@@ -52,8 +51,10 @@ export const isBacklinks = (backlinks: unknown): backlinks is Backlinks => {
 	return true;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const hasBacklinks = (backlinks: any): backlinks is Backlinks => {
-	const ret = !!backlinks?.backlinkDom;
-	return ret;
+export const hasBacklinks = (backlinks: unknown): backlinks is Backlinks => {
+	if (typeof backlinks !== "object" || backlinks === null) {
+		return false;
+	}
+
+	return "backlinkDom" in backlinks;
 };

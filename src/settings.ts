@@ -1,4 +1,4 @@
-import { PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import HierarchyPlugin from "./main";
 
 export type HierarchySettings = {
@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: HierarchySettings = {
 
 export class HierarchyPluginSettingsTab extends PluginSettingTab {
 	plugin: HierarchyPlugin;
-	// @ts-ignore
+
 	constructor(app: App, plugin: HierarchyPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
@@ -40,7 +40,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForBacklinks)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForBacklinks = value;
-						this.plugin.saveData(this.plugin.settings);
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					});
 			});
@@ -55,7 +55,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForTabs)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForTabs = value;
-						this.plugin.saveData(this.plugin.settings);
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					});
 			});
@@ -70,45 +70,56 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForEditors)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForEditors = value;
-						this.plugin.saveData(this.plugin.settings);
+						void this.plugin.saveSettings();
 						this.plugin.refresh();
 					});
 			});
 
-       new Setting(containerEl)
-            .setName("Hierarchy Exclude Paths")
-            .setDesc("Enter paths (one per line) that should be excluded from the hierarchy view.")
-            .addTextArea(text => {
-                text
-                    .setPlaceholder("e.g. journals\npages")
-                    // Join the hierarchyExcludePaths array into a multi-line string.
-                    .setValue(this.plugin.settings.hierarchyExcludePaths.join("\n"))
-                    .onChange(value => {
-                        // Split input into an array by new lines, trimming whitespace and filtering out empty strings.
-                        this.plugin.settings.hierarchyExcludePaths = value
-                            .split(/\r?\n/)
-                            .map(s => s.trim())
-                            .filter(s => s.length > 0);
-                        this.plugin.saveData(this.plugin.settings);
-                        this.plugin.refresh();
-                    });
-            });
+		new Setting(containerEl)
+			.setName("Hierarchy Exclude Paths")
+			.setDesc(
+				"Enter paths (one per line) that should be excluded from the hierarchy view.",
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("e.g. journals\npages")
+					.setValue(
+						this.plugin.settings.hierarchyExcludePaths.join("\n"),
+					)
+					.onChange((value) => {
+						this.plugin.settings.hierarchyExcludePaths =
+							parseLines(value);
+						void this.plugin.saveSettings();
+						this.plugin.refresh();
+					});
+			});
 
-       new Setting(containerEl)
-            .setName("Hierarchy Clean Path Prefixes")
-            .setDesc("Enter path prefixes (one per line) to remove from displayed paths in the hierarchy view. For example, 'pages/' will be removed from paths starting with 'pages/'.")
-            .addTextArea(text => {
-                text
-                    .setPlaceholder("e.g. pages/\nblog/")
-                    .setValue(this.plugin.settings.hierarchyCleanPathPrefixes.join("\n"))
-                    .onChange(value => {
-                        this.plugin.settings.hierarchyCleanPathPrefixes = value
-                            .split(/\r?\n/)
-                            .map(s => s.trim())
-                            .filter(s => s.length > 0);
-                        this.plugin.saveData(this.plugin.settings);
-                        this.plugin.refresh();
-                    });
-            });
+		new Setting(containerEl)
+			.setName("Hierarchy Clean Path Prefixes")
+			.setDesc(
+				"Enter path prefixes (one per line) to remove from displayed paths in the hierarchy view. For example, 'pages/' will be removed from paths starting with 'pages/'.",
+			)
+			.addTextArea((text) => {
+				text
+					.setPlaceholder("e.g. pages/\nblog/")
+					.setValue(
+						this.plugin.settings.hierarchyCleanPathPrefixes.join(
+							"\n",
+						),
+					)
+					.onChange((value) => {
+						this.plugin.settings.hierarchyCleanPathPrefixes =
+							parseLines(value);
+						void this.plugin.saveSettings();
+						this.plugin.refresh();
+					});
+			});
 	}
+}
+
+function parseLines(value: string): string[] {
+	return value
+		.split(/\r?\n/)
+		.map((entry) => entry.trim())
+		.filter((entry) => entry.length > 0);
 }

@@ -1,4 +1,4 @@
-import { App, Plugin, PluginManifest, TFile } from "obsidian";
+import { App, FileView, Plugin, PluginManifest, TFile } from "obsidian";
 import {
 	DEFAULT_SETTINGS,
 	HierarchySettings,
@@ -17,70 +17,61 @@ export default class HierarchyPlugin extends Plugin {
 		this.childrenCache = {};
 	}
 
-	async onload() {
-		await this.loadSettings();
-		this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
+	onload(): void {
+		void this.loadSettings().then(() => {
+			this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
-		patchBacklinks(this);
+			patchBacklinks(this);
 
-		this.app.workspace.onLayoutReady(() => {
-			patchAllTabs(this);
+			this.app.workspace.onLayoutReady(() => {
+				patchAllTabs(this);
 
-			this.registerEvent(
-				this.app.workspace.on("file-open", async (file) => {
-					patchAllTabs(this);
-					renderHierarchy(this, file);
-				}),
-			);
-
-			this.registerEvent(
-				this.app.workspace.on("active-leaf-change", async () => {
-					this.childrenCache = {};
-					patchAllTabs(this);
-				}),
-			);
-
-			this.registerEvent(
-				this.app.metadataCache.on("resolved", async () => {
-					const leaves =
-						this.app.workspace.getLeavesOfType("markdown");
-
-					for (const leaf of leaves) {
-						const file = (leaf.view as any).file as
-							| TFile
-							| undefined;
-						if (!file) continue;
+				this.registerEvent(
+					this.app.workspace.on("file-open", (file) => {
+						patchAllTabs(this);
 						renderHierarchy(this, file);
-					}
+					}),
+				);
 
-					this.childrenCache = {};
-					patchAllTabs(this);
-				}),
-			);
+				this.registerEvent(
+					this.app.workspace.on("active-leaf-change", () => {
+						this.childrenCache = {};
+						patchAllTabs(this);
+					}),
+				);
 
-			this.registerEvent(
-				this.app.vault.on("create", () => {
-					patchAllTabs(this);
-					this.childrenCache = {};
-				}),
-			);
+				this.registerEvent(
+					this.app.metadataCache.on("resolved", () => {
+						this.refreshMarkdownLeaves();
+						this.childrenCache = {};
+						patchAllTabs(this);
+					}),
+				);
 
-			this.registerEvent(
-				this.app.workspace.on("layout-change", () => {
-					patchAllTabs(this);
-					renderHierarchy(this);
-					this.childrenCache = {};
-				}),
-			);
+				this.registerEvent(
+					this.app.vault.on("create", () => {
+						patchAllTabs(this);
+						this.childrenCache = {};
+					}),
+				);
+
+				this.registerEvent(
+					this.app.workspace.on("layout-change", () => {
+						patchAllTabs(this);
+						renderHierarchy(this);
+						this.childrenCache = {};
+					}),
+				);
+			});
 		});
 	}
 
-	async refresh() {
+	refresh(): void {
 		patchAllTabs(this);
 		renderHierarchy(this);
 	}
 
-	async onunload() {
+	onunload(): void {
 		this.settings.hierarchyForTabs = false;
 		this.settings.hierarchyForBacklinks = false;
 		this.settings.hierarchyForEditors = false;
@@ -98,5 +89,16 @@ export default class HierarchyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	private refreshMarkdownLeaves(): void {
+		const leaves = this.app.workspace.getLeavesOfType("markdown");
+
+		for (const leaf of leaves) {
+			if (!(leaf.view instanceof FileView)) continue;
+			const file: TFile | null = leaf.view.file;
+			if (!file) continue;
+			renderHierarchy(this, file);
+		}
 	}
 }

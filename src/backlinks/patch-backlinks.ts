@@ -3,6 +3,31 @@ import { Component } from "obsidian";
 import type HierarchyPlugin from "../main";
 import { hasBacklinks } from "../utils/backlinks";
 
+type BacklinkTitleElement = {
+	textContent: string | null;
+};
+
+type BacklinkItem = {
+	el: {
+		firstChild: {
+			find: (selector: string) => BacklinkTitleElement;
+		};
+	};
+	file: {
+		path: string;
+		basename: string;
+	};
+};
+
+type BacklinkDomLike = {
+	constructor: {
+		prototype: {
+			addResult: (...args: unknown[]) => BacklinkItem;
+			emptyResults: (...args: unknown[]) => unknown;
+		};
+	};
+};
+
 export function patchBacklinks(plugin: HierarchyPlugin) {
 	plugin.register(
 		around(Component.prototype, {
@@ -28,12 +53,10 @@ export function patchBacklinks(plugin: HierarchyPlugin) {
 	);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function patchBacklinkDom(plugin: HierarchyPlugin, dom: any) {
+function patchBacklinkDom(plugin: HierarchyPlugin, dom: BacklinkDomLike) {
 	plugin.register(
 		around(dom.constructor.prototype, {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			addResult(old: any) {
+			addResult(old: (...args: unknown[]) => BacklinkItem) {
 				return function (...args: unknown[]) {
 					const result = old.call(this, ...args);
 					try {
@@ -47,8 +70,7 @@ function patchBacklinkDom(plugin: HierarchyPlugin, dom: any) {
 					return result;
 				};
 			},
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			emptyResults(old: any) {
+			emptyResults(old: (...args: unknown[]) => unknown) {
 				return function (...args: unknown[]) {
 					return old.call(this, ...args);
 				};
@@ -57,8 +79,7 @@ function patchBacklinkDom(plugin: HierarchyPlugin, dom: any) {
 	);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function patchBacklinkTitle(plugin: HierarchyPlugin, item: any): void {
+function patchBacklinkTitle(plugin: HierarchyPlugin, item: BacklinkItem): void {
 	const titleEl = item.el.firstChild.find(".tree-item-inner");
 
 	if (plugin.settings.hierarchyForBacklinks) {
