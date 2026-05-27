@@ -23,7 +23,6 @@
 		"esbuild": "^0.28.0",
 		"eslint": "^8.57.1",
 		"flatted": "3.4.2",
-		"js-yaml": "4.1.1",
 		"minimatch": "3.1.4",
 		"obsidian": "latest",
 		"obsidian-typings": "^6.12.0",
@@ -41,7 +40,6 @@
 		"brace-expansion": "1.1.13",
 		"cross-spawn": "7.0.5",
 		"flatted": "3.4.2",
-		"js-yaml": "4.1.1",
 		"minimatch": "3.1.4",
 		"picomatch": "2.3.2"
 	}
