@@ -40,8 +40,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForBacklinks)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForBacklinks = value;
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
+						this.saveAndRefresh();
 					});
 			});
 
@@ -55,8 +54,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForTabs)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForTabs = value;
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
+						this.saveAndRefresh();
 					});
 			});
 
@@ -70,8 +68,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.hierarchyForEditors)
 					.onChange((value) => {
 						this.plugin.settings.hierarchyForEditors = value;
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
+						this.saveAndRefresh();
 					});
 			});
 
@@ -89,8 +86,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.hierarchyExcludePaths =
 							parseLines(value);
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
+						this.saveAndRefresh();
 					});
 			});
 
@@ -110,10 +106,16 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 					.onChange((value) => {
 						this.plugin.settings.hierarchyCleanPathPrefixes =
 							parseLines(value);
-						void this.plugin.saveSettings();
-						this.plugin.refresh();
+						this.saveAndRefresh();
 					});
 			});
+	}
+
+	private saveAndRefresh(): void {
+		this.plugin.saveSettings().catch((error: unknown) => {
+			this.plugin.handleError("Failed to save Hierarchy settings.", error);
+		});
+		this.plugin.refresh();
 	}
 }
 

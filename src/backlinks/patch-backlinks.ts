@@ -1,5 +1,5 @@
 import { around } from "monkey-around";
-import { Component } from "obsidian";
+import { Component, Notice } from "obsidian";
 import type HierarchyPlugin from "../main";
 import { hasBacklinks } from "../utils/backlinks";
 
@@ -38,10 +38,7 @@ export function patchBacklinks(plugin: HierarchyPlugin) {
 							patchBacklinkDom(plugin, child.backlinkDom);
 							return old.call(this, child, ...args);
 						} catch (error) {
-							console.error(
-								"rror while patching Obsidian internals: ",
-								error,
-							);
+							showPatchError(error);
 							return old.call(this, child, ...args);
 						}
 					} else {
@@ -62,10 +59,7 @@ function patchBacklinkDom(plugin: HierarchyPlugin, dom: BacklinkDomLike) {
 					try {
 						patchBacklinkTitle(plugin, result);
 					} catch (error) {
-						console.error(
-							"rror while patching Obsidian internals: ",
-							error,
-						);
+						showPatchError(error);
 					}
 					return result;
 				};
@@ -87,4 +81,9 @@ function patchBacklinkTitle(plugin: HierarchyPlugin, item: BacklinkItem): void {
 	} else {
 		titleEl.textContent = item.file.basename;
 	}
+}
+
+function showPatchError(error: unknown): void {
+	const detail = error instanceof Error ? error.message : String(error);
+	new Notice(`Hierarchy failed to update backlinks: ${detail}`);
 }
