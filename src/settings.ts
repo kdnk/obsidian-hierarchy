@@ -5,6 +5,7 @@ export type HierarchySettings = {
     hierarchyForBacklinks: boolean;
     hierarchyForTabs: boolean;
     hierarchyForEditors: boolean;
+    hierarchyUseObsidianFolder: boolean;
     hierarchyExcludePaths: string[];
     hierarchyCleanPathPrefixes: string[];
 };
@@ -13,8 +14,9 @@ export const DEFAULT_SETTINGS: HierarchySettings = {
     hierarchyForBacklinks: true,
     hierarchyForTabs: true,
     hierarchyForEditors: true,
+    hierarchyUseObsidianFolder: true,
     hierarchyExcludePaths: ["attachments", "journals"],
-	hierarchyCleanPathPrefixes: ["pages/"],
+	hierarchyCleanPathPrefixes: [],
 };
 
 export class HierarchyPluginSettingsTab extends PluginSettingTab {
@@ -91,12 +93,28 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName("Use Obsidian's new-note folder")
+			.setDesc(
+				"Omit the default folder for new notes from hierarchy labels. Follows Obsidian's vault-root, current-folder, or specified-folder setting.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.hierarchyUseObsidianFolder)
+					.onChange((value) => {
+						this.plugin.settings.hierarchyUseObsidianFolder = value;
+						this.saveAndRefresh();
+						this.display();
+					});
+			});
+
+		new Setting(containerEl)
 			.setName("Hierarchy Clean Path Prefixes")
 			.setDesc(
-				"Enter path prefixes (one per line) to remove from displayed paths in the hierarchy view. For example, 'pages/' will be removed from paths starting with 'pages/'.",
+				"When following Obsidian's folder is off, remove these prefixes from hierarchy labels (one per line). For example, 'pages/'. Link destinations always retain their full paths.",
 			)
 			.addTextArea((text) => {
 				text
+					.setDisabled(this.plugin.settings.hierarchyUseObsidianFolder)
 					.setPlaceholder("e.g. pages/\nblog/")
 					.setValue(
 						this.plugin.settings.hierarchyCleanPathPrefixes.join(

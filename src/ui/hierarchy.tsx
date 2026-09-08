@@ -1,9 +1,15 @@
 import * as React from "react";
+import { Keymap, PaneType } from "obsidian";
+import type { HierarchyEntry } from "../hierarchy-view/hierarchy-entry";
+
+type OpenEntry = (entry: HierarchyEntry, newLeaf: PaneType | boolean) => Promise<void>;
 
 export const Hierarchy = (props: {
-	hierarchies: string[];
-	children: string[];
+	hierarchies: HierarchyEntry[];
+	children: HierarchyEntry[];
 	count: number;
+	vaultName: string;
+	onOpen: OpenEntry;
 }) => {
 	const [isExpanded, setIsExpanded] = React.useState(true);
 
@@ -23,19 +29,23 @@ export const Hierarchy = (props: {
 				className={`hierarchy-list-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
 			>
 				<div className="hierarchy-list">
-					{props.hierarchies.map((path) => {
+					{props.hierarchies.map((entry) => {
 						return (
 							<HierarchyItem
-								key={path}
-								path={path}
+								key={entry.path}
+								entry={entry}
+								vaultName={props.vaultName}
+								onOpen={props.onOpen}
 							></HierarchyItem>
 						);
 					})}
-					{props.children.map((childPath) => {
+					{props.children.map((entry) => {
 						return (
 							<HierarchyItem
-								key={childPath}
-								path={childPath}
+								key={entry.path}
+								entry={entry}
+								vaultName={props.vaultName}
+								onOpen={props.onOpen}
 							></HierarchyItem>
 						);
 					})}
@@ -47,15 +57,24 @@ export const Hierarchy = (props: {
 	);
 };
 
-const HierarchyItem = (props: { path: string }) => {
+const HierarchyItem = (props: { entry: HierarchyEntry; vaultName: string; onOpen: OpenEntry }) => {
+	const open = (event: React.MouseEvent<HTMLAnchorElement>) => {
+		event.preventDefault();
+		event.stopPropagation();
+		void props.onOpen(props.entry, Keymap.isModEvent(event.nativeEvent));
+	};
 	return (
-		<div key={props.path}>
+		<div>
 			<span className="cm-formatting cm-formatting-list cm-list-1">
 				<span className="list-bullet">-</span>{" "}
 			</span>
 			<span className="cm-hmd-internal-link cm-list-1">
-				<a href={`obsidian://new?file=${props.path}.md&append=true`}>
-					{props.path}
+				<a
+					href={`obsidian://open?vault=${encodeURIComponent(props.vaultName)}&file=${encodeURIComponent(props.entry.path)}`}
+					onClick={open}
+					onAuxClick={(event) => { if (event.button === 1) open(event); }}
+				>
+					{props.entry.title}
 				</a>
 			</span>
 		</div>

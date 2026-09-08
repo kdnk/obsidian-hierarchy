@@ -85,10 +85,18 @@ export default class HierarchyPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
+		const saved: Partial<HierarchySettings> | null = await this.loadData();
 		this.settings = {
 			...DEFAULT_SETTINGS,
-			...(await this.loadData()),
+			...saved,
 		};
+		if (saved && saved.hierarchyUseObsidianFolder === undefined) {
+			const prefixes = saved.hierarchyCleanPathPrefixes;
+			// Adopt Obsidian's folder for the old default; preserve custom rules,
+			// including an empty list that explicitly disabled shortening.
+			this.settings.hierarchyUseObsidianFolder = prefixes === undefined
+				|| (prefixes.length === 1 && prefixes[0] === "pages/");
+		}
 	}
 
 	async saveSettings(): Promise<void> {

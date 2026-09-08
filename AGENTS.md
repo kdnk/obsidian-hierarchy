@@ -1,3 +1,5 @@
 - Backlink integration
     - Keep undocumented Obsidian renderer shapes, DOM selectors, and method patches in `src/backlinks/obsidian-backlinks.ts`; keep title formatting in `src/backlinks/patch-backlinks.ts`.
     - For backlink lifecycle tests, use the real `monkey-around` library and replace only Obsidian's runtime. Cover repeated pane creation and unloading/reloading so tests can detect stacked patches and leaked hooks.
+- Hierarchy navigation
+    - Keep shortened labels separate from vault-relative file paths; select descendants and open notes using their full paths.

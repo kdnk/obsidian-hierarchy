@@ -2,6 +2,7 @@ import { MarkdownView, TFile } from "obsidian";
 import { createRoot } from "react-dom/client";
 import { Hierarchy } from "../ui/hierarchy";
 import type HierarchyPlugin from "../main";
+import { HierarchyEntry, openHierarchyEntry } from "./hierarchy-entry";
 
 const CONTAINER_CLASS = "hierarchy-container";
 
@@ -34,17 +35,23 @@ export function renderHierarchy(
 
 		const root = createRoot(newContainer);
 
-		// Clean the path using hierarchyCleanPathPrefixes.
-		const currentPathName = getCleanPathName(
-			leaf.view.file.path,
-			plugin.settings.hierarchyCleanPathPrefixes,
-		);
-		// Pass the hierarchyExcludePaths to filter out intermediate directories.
-		const hierarchies = getHierarchies(
-			currentPathName,
-			plugin.settings.hierarchyExcludePaths,
-		);
-		const children = getChildren(plugin, currentPathName);
+		const sourcePath = leaf.view.file.path;
+		const prefixes = plugin.settings.hierarchyUseObsidianFolder
+			? getObsidianPrefixes(plugin, sourcePath)
+			: plugin.settings.hierarchyCleanPathPrefixes;
+		const toEntries = (paths: string[]): HierarchyEntry[] => paths
+			.map((path) => ({ path, title: getDisplayPath(path, prefixes) }))
+			.filter(({ title }) => title.length > 0 && !plugin.settings.hierarchyExcludePaths
+				.some((exclude) => title.startsWith(exclude)));
+		const parts = sourcePath.split("/");
+		const omittedPrefix = prefixes.find((prefix) => prefix.length > 0
+			&& withoutMarkdownExtension(sourcePath).startsWith(prefix));
+		const ancestorPaths = parts.slice(0, -1)
+			.map((_, index) => `${parts.slice(0, index + 1).join("/")}.md`)
+			.filter((path) => !omittedPrefix
+				|| !omittedPrefix.startsWith(`${withoutMarkdownExtension(path)}/`));
+		const hierarchies = toEntries(ancestorPaths);
+		const children = toEntries(getChildren(plugin, sourcePath));
 
 		const count = hierarchies.length + children.length;
 
@@ -53,95 +60,49 @@ export function renderHierarchy(
 				hierarchies={hierarchies}
 				children={children}
 				count={count}
+				vaultName={plugin.app.vault.getName()}
+				onOpen={async (entry, newLeaf) => {
+					try {
+						await openHierarchyEntry(plugin.app, entry, newLeaf);
+					} catch (error) {
+						plugin.handleError("Failed to open hierarchy note.", error);
+					}
+				}}
 			></Hierarchy>,
 		);
 	});
 }
 
-function getChildren(plugin: HierarchyPlugin, currentPathName: string) {
-	const files = plugin.app.metadataCache.getCachedFiles();
-	if (plugin.childrenCache[currentPathName]) {
-		return plugin.childrenCache[currentPathName];
+function getChildren(plugin: HierarchyPlugin, sourcePath: string): string[] {
+	if (Object.prototype.hasOwnProperty.call(plugin.childrenCache, sourcePath)) {
+		return plugin.childrenCache[sourcePath];
 	}
-
-	const children = files
-		.filter((file) => {
-			function isSubdirectory(parentDir: string, subDir: string) {
-				return (
-					subDir.startsWith(parentDir) &&
-					(subDir[parentDir.length] === "/" ||
-						parentDir.length === subDir.length)
-				);
-			}
-
-			// Clean the path using hierarchyCleanPathPrefixes.
-			const pathName = getCleanPathName(
-				file,
-				plugin.settings.hierarchyCleanPathPrefixes,
-			);
-			if (pathName === currentPathName) return false;
-			// Exclude paths matching any hierarchyExcludePaths.
-			if (
-				plugin.settings.hierarchyExcludePaths.some((exclude) =>
-					pathName.startsWith(exclude),
-				)
-			) {
-				return false;
-			}
-			return isSubdirectory(currentPathName, pathName);
-		})
-		.map((file) =>
-			getCleanPathName(file, plugin.settings.hierarchyCleanPathPrefixes),
-		);
-	plugin.childrenCache[currentPathName] = children;
+	const prefix = `${withoutMarkdownExtension(sourcePath)}/`;
+	// Cache actual paths only. Labels and exclusions depend on current settings.
+	const children = plugin.app.vault.getMarkdownFiles()
+		.map((file) => file.path)
+		.filter((path) => path.startsWith(prefix));
+	plugin.childrenCache[sourcePath] = children;
 	return children;
 }
 
-function getHierarchies(pathName: string, excludePaths: string[]): string[] {
-	const dirs = pathName.split("/");
-
-	const computePath = (hierarchies: string[]) => {
-		return hierarchies.reduce(
-			(acc, curr, index) => (index === 0 ? curr : `${acc}/${curr}`),
-			"",
-		);
-	};
-
-	// Generate intermediate hierarchy paths.
-	const hierarchies = pathName
-		.split("/")
-		.map((_, index) => {
-			if (index === dirs.length - 1) {
-				return null;
-			}
-			const path = computePath(dirs.slice(0, index + 1));
-			return path;
-		})
-		.filter((path) => path !== null) as string[];
-
-	// Filter out any hierarchy paths that start with any of the excluded prefixes.
-	return hierarchies.filter((hierarchy) => {
-		return !excludePaths.some((exclude) => hierarchy.startsWith(exclude));
-	});
+function getObsidianPrefixes(plugin: HierarchyPlugin, sourcePath: string): string[] {
+	// Public API applies the vault-root, current-folder and specified-folder
+	// preferences without depending on undocumented configuration keys.
+	const folder = plugin.app.fileManager.getNewFileParent(sourcePath);
+	const path = folder.path.replace(/\/$/, "");
+	return path ? [`${path}/`] : [];
 }
 
-/**
- * Cleans the provided file path.
- * Removes any file extension and strips any of the configured hierarchyCleanPathPrefixes if the path starts with one.
- *
- * @param path - The original file path.
- * @param prefixes - An array of prefixes to remove.
- * @returns The cleaned path name.
- */
-function getCleanPathName(path: string, prefixes: string[]): string {
-	// Remove file extension if present.
-	let pathName = path.split(".")[0];
-	// Remove any configured prefix if the path starts with it.
+function getDisplayPath(path: string, prefixes: string[]): string {
+	const name = withoutMarkdownExtension(path);
 	for (const prefix of prefixes) {
-		if (pathName.startsWith(prefix)) {
-			pathName = pathName.slice(prefix.length);
-			break;
-		}
+		if (!prefix) continue;
+		if (name.startsWith(prefix)) return name.slice(prefix.length);
 	}
-	return pathName;
+	return name;
+}
+
+function withoutMarkdownExtension(path: string): string {
+	return path.replace(/\.md$/, "");
 }

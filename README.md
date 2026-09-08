@@ -29,6 +29,10 @@ To configure the plugin:
 -   **Display hierarchy in backlinks panel**: Toggle this setting to show the folder hierarchy of files in the backlinks panel, providing more context for each backlink.
 -   **Display hierarchy in tab headers**: Enable this setting to show the folder hierarchy in the tab headers, allowing you to see the file's path in addition to its name.
 -   **Display hierarchy in editor view**: Enable this setting to display the folder hierarchy below each markdown editor, helping you to quickly see related files in the same directory.
+-   **Use Obsidian's new-note folder**: Enabled by default. Omit the default location for new notes from editor hierarchy labels. This follows Obsidian's setting for a specified folder, the current note's folder, or the vault root; the vault root leaves paths unchanged.
+-   **Hierarchy Clean Path Prefixes**: Turn off the option above to use custom prefixes, one per line. An empty list keeps full paths. Existing custom lists are preserved on upgrade; the old `pages/` default adopts Obsidian's folder setting.
+
+Shortened labels always retain their original file destinations. Clicking an item opens that exact note, even if another folder has a note with the same name. Clicking a missing ancestor creates an empty note at its full hierarchy path. Cmd/Ctrl-click and middle-click follow Obsidian's new-tab behavior.
 
 ## Tips
 
@@ -60,7 +64,7 @@ npm run build
 npm run lint
 ```
 
-The backlink tests use Node's built-in test runner and the existing esbuild dependency. They run the actual patching code and `monkey-around`, replacing only Obsidian's runtime classes. These tests cover patch registration, repeated panes, settings, error handling, and unloading/reloading; visual behavior should also be checked in Obsidian.
+The tests use Node's built-in test runner and the existing esbuild dependency. Backlink tests run the actual patching code and `monkey-around`, replacing only Obsidian's runtime classes. Hierarchy tests replace the React DOM host while exercising real JSX, path selection, navigation, settings migration, and static HTML output. Visual behavior and click handling should also be checked in Obsidian.
 
 To bump the version, run `npm version patch` or `npm version minor` or `npm version major`. This will bump the version in `package.json`, create a new git tag, and push the changes to the repository.
 

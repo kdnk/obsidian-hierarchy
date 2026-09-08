@@ -25,3 +25,25 @@ export class Notice {
 		Notice.messages.push(message);
 	}
 }
+
+export class TFile {
+	constructor(path) {
+		this.path = path;
+		this.basename = path.slice(0, -3).split("/").pop();
+	}
+}
+
+export class FileView {}
+export class MarkdownView extends FileView {}
+export class Plugin extends Component {
+	constructor(app) {
+		super();
+		this.app = app;
+	}
+}
+export class PluginSettingTab {}
+export class Setting {}
+export const Platform = { isMobile: false };
+export const Keymap = {
+	isModEvent: (event) => !!(event?.metaKey || event?.ctrlKey || event?.button === 1),
+};
