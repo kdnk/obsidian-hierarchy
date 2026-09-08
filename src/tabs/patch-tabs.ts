@@ -128,13 +128,13 @@ export function patchAllTabs(plugin: HierarchyPlugin) {
 			if (!filePath) continue;
 
 			if (plugin.settings.hierarchyForTabs) {
-				// split .md file extension from file name
-				titleEl.textContent = filePath.split(".md")[0];
+				// Remove only the final Markdown extension, preserving dots in the path.
+				titleEl.textContent = filePath.replace(/\.md$/, "");
 			} else {
 				// Otherwise, display only the base name of the file
 				const parts = filePath.split("/");
 				const basenameWithExt = parts[parts.length - 1];
-				const basename = basenameWithExt.split(".md")[0];
+				const basename = basenameWithExt.replace(/\.md$/, "");
 				titleEl.textContent = basename;
 			}
 		}
