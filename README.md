@@ -52,6 +52,16 @@ ref. https://platers.github.io/obsidian-linter/settings/custom-rules/#custom-reg
 
 ## Dev
 
+Run the development checks with:
+
+```sh
+npm test
+npm run build
+npm run lint
+```
+
+The backlink tests use Node's built-in test runner and the existing esbuild dependency. They run the actual patching code and `monkey-around`, replacing only Obsidian's runtime classes. These tests cover patch registration, repeated panes, settings, error handling, and unloading/reloading; visual behavior should also be checked in Obsidian.
+
 To bump the version, run `npm version patch` or `npm version minor` or `npm version major`. This will bump the version in `package.json`, create a new git tag, and push the changes to the repository.
 
 ## Contributing
