@@ -37,6 +37,8 @@ Shortened labels always retain their original file destinations. Clicking an ite
 
 Each editor retains its hierarchy expansion state during refreshes and editor DOM replacement. Closing an editor or unloading the plugin releases its React root. Backlink settings apply immediately to already displayed linked and unlinked mentions; disabling the setting or unloading the plugin restores their original titles while preserving later edits by other plugins.
 
+Open hierarchies refresh when notes are created, renamed, or deleted. Backlink titles preserve dots in folder and file names and omit only the final file extension.
+
 ## Tips
 
 If you prefer using paths over tags (like I do), I recommend using [Obsidian Linter](https://github.com/platers/obsidian-linter).  

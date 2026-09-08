@@ -74,6 +74,23 @@ test("formats titles using the current setting and preserves the render result",
 	assert.equal(title.textContent, "Note");
 });
 
+test("preserves dots in backlink folders and names while removing only the final extension", (t) => {
+	const plugin = install(t);
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	plugin.addChild({ backlinkDom: dom });
+	for (const [path, expected] of [
+		["notes/Topic.v1/A.md", "notes/Topic.v1/A"],
+		["notes/Report.v2.md", "notes/Report.v2"],
+		["notes/archive.md/Note.md", "notes/archive.md/Note"],
+	]) {
+		const { item, title } = createItem();
+		item.file.path = path;
+		dom.addResult(item);
+		assert.equal(title.textContent, expected);
+	}
+});
+
 test("refreshes displayed titles immediately when the backlink setting changes", (t) => {
 	const Renderer = createRenderer();
 	const dom = new Renderer();

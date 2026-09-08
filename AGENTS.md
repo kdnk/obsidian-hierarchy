@@ -3,3 +3,6 @@
     - For backlink lifecycle tests, use the real `monkey-around` library and replace only Obsidian's runtime. Cover repeated pane creation and unloading/reloading so tests can detect stacked patches and leaked hooks.
 - Hierarchy navigation
     - Keep shortened labels separate from vault-relative file paths; select descendants and open notes using their full paths.
+    - Invalidate cached child paths before rendering after vault creation, rename, or deletion events.
+- Plugin lifecycle
+    - In startup lifecycle tests, control settings-read completion and layout readiness separately. Cover unloading at both boundaries and an old settings read completing after re-enabling.
