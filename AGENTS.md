@@ -6,3 +6,6 @@
     - Invalidate cached child paths before rendering after vault creation, rename, or deletion events.
 - Plugin lifecycle
     - In startup lifecycle tests, control settings-read completion and layout readiness separately. Cover unloading at both boundaries and an old settings read completing after re-enabling.
+- Releases
+    - In GitButler workspaces, run `npm version <patch|minor|major> --no-git-tag-version --ignore-scripts`, then run `version-bump.mjs` with `npm_package_version` set to the new package version. The normal npm version hook runs `git add`, so commit the updated files with `but` instead.
+    - Create release tags at the release commit landed on the target branch, not at the synthetic GitButler workspace commit.
