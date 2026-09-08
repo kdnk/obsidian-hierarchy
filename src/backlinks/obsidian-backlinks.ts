@@ -1,5 +1,5 @@
 import { around } from "monkey-around";
-import { Component, Notice } from "obsidian";
+import { Component, Notice, Workspace } from "obsidian";
 
 type BacklinkFile = {
 	path: string;
@@ -8,6 +8,10 @@ type BacklinkFile = {
 
 type BacklinkPrototype = {
 	addResult: (...args: unknown[]) => unknown;
+};
+
+type BacklinkRenderer = {
+	resultDomLookup?: Map<unknown, unknown>;
 };
 
 type BacklinkItem = {
@@ -22,21 +26,63 @@ type BacklinkItem = {
  */
 export function registerBacklinkTitleTransform(
 	owner: Component,
-	getTitle: (file: BacklinkFile) => string,
-): void {
+	workspace: Pick<Workspace, "getLeavesOfType">,
+	getTitle: (file: BacklinkFile) => string | null,
+): () => void {
 	const patchedPrototypes = new WeakSet<BacklinkPrototype>();
+	const titles = new WeakMap<Element, { original: string | null; applied: string }>();
+	const removePatches: (() => void)[] = [];
+	let active = true;
+
+	function updateItem(result: unknown, restore = false): void {
+		try {
+			if (!isBacklinkItem(result)) return;
+			const title = result.el.querySelector(".tree-item-inner");
+			if (!title) return;
+			const previous = titles.get(title);
+			const text = restore ? null : getTitle(result.file);
+			if (text === null) {
+				// Do not overwrite a title changed by another plugin after our write.
+				if (previous && title.textContent === previous.applied) {
+					title.textContent = previous.original;
+				}
+				titles.delete(title);
+				return;
+			}
+			const original = previous && title.textContent === previous.applied
+				? previous.original
+				: title.textContent;
+			if (title.textContent !== text) title.textContent = text;
+			titles.set(title, { original, applied: text });
+		} catch (error) {
+			showPatchError(error);
+		}
+	}
+
+	function visitRenderer(renderer: BacklinkRenderer, restore = false): void {
+		if (!restore) {
+			const prototype = getBacklinkPrototype(renderer);
+			if (prototype && !patchedPrototypes.has(prototype)) {
+				removePatches.push(patchRenderer(prototype, updateItem));
+				patchedPrototypes.add(prototype);
+			}
+		}
+		if (renderer.resultDomLookup instanceof Map) {
+			for (const result of renderer.resultDomLookup.values()) updateItem(result, restore);
+		}
+	}
+
+	function refresh(): void {
+		if (active) visitWorkspaceRenderers(workspace, visitRenderer);
+	}
 
 	// Component.addChild discovers renderers in both panels and editor backlinks.
-	owner.register(
+	removePatches.push(
 		around(Component.prototype, {
 			addChild(old: Component["addChild"]) {
 				return function (child: Component, ...args: unknown[]) {
 					try {
-						const prototype = getBacklinkPrototype(child);
-						if (prototype && !patchedPrototypes.has(prototype)) {
-							owner.register(patchRenderer(prototype, getTitle));
-							patchedPrototypes.add(prototype);
-						}
+						visitComponentRenderers(child, visitRenderer);
 					} catch (error) {
 						showPatchError(error);
 					}
@@ -46,36 +92,70 @@ export function registerBacklinkTitleTransform(
 			},
 		}),
 	);
+	owner.register(() => {
+		active = false;
+		for (const remove of removePatches.splice(0).reverse()) remove();
+		visitWorkspaceRenderers(workspace, (renderer) => visitRenderer(renderer, true));
+	});
+	refresh();
+	return refresh;
 }
 
 function patchRenderer(
 	prototype: BacklinkPrototype,
-	getTitle: (file: BacklinkFile) => string,
+	updateItem: (result: unknown) => void,
 ): () => void {
 	return around(prototype, {
 		addResult(old: BacklinkPrototype["addResult"]) {
 			return function (...args: unknown[]) {
 				const result = old.apply(this, args);
-				try {
-					if (isBacklinkItem(result)) {
-						const title = result.el.querySelector(".tree-item-inner");
-						if (title) title.textContent = getTitle(result.file);
-					}
-				} catch (error) {
-					showPatchError(error);
-				}
+				updateItem(result);
 				return result;
 			};
 		},
 	});
 }
 
-function getBacklinkPrototype(child: unknown): BacklinkPrototype | null {
-	if (!isRecord(child) || !isRecord(child.backlinkDom)) return null;
-	const prototype: unknown = Object.getPrototypeOf(child.backlinkDom);
+function getBacklinkPrototype(renderer: BacklinkRenderer): BacklinkPrototype | null {
+	const prototype: unknown = Object.getPrototypeOf(renderer);
 	return isRecord(prototype) && typeof prototype.addResult === "function"
 		? prototype as BacklinkPrototype
 		: null;
+}
+
+function visitWorkspaceRenderers(
+	workspace: Pick<Workspace, "getLeavesOfType">,
+	visit: (renderer: BacklinkRenderer) => void,
+): void {
+	// Enumerate live components instead of retaining renderers and their DOM.
+	const seen = new Set<object>();
+	function visitComponent(component: unknown): void {
+		if (!isRecord(component) || seen.has(component)) return;
+		seen.add(component);
+		try {
+			visitComponentRenderers(component, visit);
+			if (Array.isArray(component._children)) {
+				for (const child of component._children) visitComponent(child);
+			}
+		} catch (error) {
+			showPatchError(error);
+		}
+	}
+	for (const type of ["markdown", "backlink"]) {
+		for (const leaf of workspace.getLeavesOfType(type)) visitComponent(leaf.view);
+	}
+}
+
+function visitComponentRenderers(
+	component: unknown,
+	visit: (renderer: BacklinkRenderer) => void,
+): void {
+	if (!isRecord(component)) return;
+	// Unlinked mentions share the patched backlink renderer prototype.
+	for (const key of ["backlinkDom", "unlinkedDom"]) {
+		const renderer = component[key];
+		if (isRecord(renderer)) visit(renderer);
+	}
 }
 
 function isBacklinkItem(item: unknown): item is BacklinkItem {

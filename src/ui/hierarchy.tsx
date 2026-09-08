@@ -10,15 +10,21 @@ export const Hierarchy = (props: {
 	count: number;
 	vaultName: string;
 	onOpen: OpenEntry;
+	initialExpanded: boolean;
+	onExpandedChange: (expanded: boolean) => void;
 }) => {
-	const [isExpanded, setIsExpanded] = React.useState(true);
+	const [isExpanded, setIsExpanded] = React.useState(props.initialExpanded);
 
 	return props.hierarchies.length + props.children.length > 0 ? (
 		<div className="hierarchy-wrapper">
 			<div className="nav-header"></div>
 			<div
 				className={`hierarchy-title-outer ${isExpanded ? "hierarchy-expanded" : "hierarchy-collapsed"}`}
-				onClick={() => setIsExpanded((val) => !val)}
+				onClick={() => {
+					const next = !isExpanded;
+					setIsExpanded(next);
+					props.onExpandedChange(next);
+				}}
 			>
 				<div className="hierarchy-title">Hierarchy</div>
 				<div className="hierarchy-count-outer">

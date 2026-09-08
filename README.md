@@ -31,8 +31,11 @@ To configure the plugin:
 -   **Display hierarchy in editor view**: Enable this setting to display the folder hierarchy below each markdown editor, helping you to quickly see related files in the same directory.
 -   **Use Obsidian's new-note folder**: Enabled by default. Omit the default location for new notes from editor hierarchy labels. This follows Obsidian's setting for a specified folder, the current note's folder, or the vault root; the vault root leaves paths unchanged.
 -   **Hierarchy Clean Path Prefixes**: Turn off the option above to use custom prefixes, one per line. An empty list keeps full paths. Existing custom lists are preserved on upgrade; the old `pages/` default adopts Obsidian's folder setting.
+-   **Hierarchy Exclude Paths**: Match an exact path and its descendants, using either the displayed path or the full vault-relative path. For example, `Topic/Child` also excludes `Topic/Child/Leaf`, but keeps `Topic/Childish`. A trailing slash is optional. A full file path such as `pages/Topic/Child.md` excludes just that note.
 
 Shortened labels always retain their original file destinations. Clicking an item opens that exact note, even if another folder has a note with the same name. Clicking a missing ancestor creates an empty note at its full hierarchy path. Cmd/Ctrl-click and middle-click follow Obsidian's new-tab behavior.
+
+Each editor retains its hierarchy expansion state during refreshes and editor DOM replacement. Closing an editor or unloading the plugin releases its React root. Backlink settings apply immediately to already displayed linked and unlinked mentions; disabling the setting or unloading the plugin restores their original titles while preserving later edits by other plugins.
 
 ## Tips
 

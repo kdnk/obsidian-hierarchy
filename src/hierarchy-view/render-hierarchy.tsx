@@ -1,18 +1,51 @@
 import { MarkdownView, TFile } from "obsidian";
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import { Hierarchy } from "../ui/hierarchy";
 import type HierarchyPlugin from "../main";
 import { HierarchyEntry, openHierarchyEntry } from "./hierarchy-entry";
 
 const CONTAINER_CLASS = "hierarchy-container";
 
+type MountedHierarchy = { root: Root; container: HTMLElement };
+type HierarchyState = {
+	mounts: Map<MarkdownView, MountedHierarchy>;
+	expanded: WeakMap<MarkdownView, boolean>;
+};
+const stateByPlugin = new WeakMap<HierarchyPlugin, HierarchyState>();
+
 export function renderHierarchy(
 	plugin: HierarchyPlugin,
 	file?: TFile | null,
 ): void {
 	const markdownLeaves = plugin.app.workspace.getLeavesOfType("markdown");
+	let state = stateByPlugin.get(plugin);
+	if (!state) {
+		if (!plugin.settings.hierarchyForEditors) return;
+		state = { mounts: new Map(), expanded: new WeakMap() };
+		stateByPlugin.set(plugin, state);
+		const ownedMounts = state.mounts;
+		plugin.register(() => {
+			for (const mount of ownedMounts.values()) unmount(mount);
+			ownedMounts.clear();
+			stateByPlugin.delete(plugin);
+		});
+	}
+	const { mounts, expanded } = state;
+	const activeViews = new Set(markdownLeaves.map((leaf) => leaf.view));
+	// Cleanup also runs for targeted file updates and reading-mode views.
+	for (const [view, mount] of mounts) {
+		if (!plugin.settings.hierarchyForEditors || !activeViews.has(view)
+			|| !view.file || !view.containerEl.contains(mount.container)
+			|| !view.containerEl.querySelector(".cm-contentContainer")) {
+			unmount(mount);
+			mounts.delete(view);
+		}
+	}
+	if (!plugin.settings.hierarchyForEditors) return;
+	const currentMounts = mounts;
 	markdownLeaves.forEach((leaf) => {
 		if (!(leaf.view instanceof MarkdownView)) return;
+		const view = leaf.view;
 		if (!leaf.view.file) return;
 		if (file && leaf.view.file.path !== file.path) return;
 
@@ -21,19 +54,13 @@ export function renderHierarchy(
 		);
 		if (!mainEl) return;
 
-		const containers = leaf.view.containerEl.querySelectorAll(
-			"." + CONTAINER_CLASS,
-		);
-		if (containers) {
-			containers.forEach((el) => el.remove());
+		let mount = currentMounts.get(leaf.view);
+		if (!mount) {
+			const container = createDiv({ cls: CONTAINER_CLASS });
+			mainEl.after(container);
+			mount = { root: createRoot(container), container };
+			currentMounts.set(leaf.view, mount);
 		}
-
-		if (!plugin.settings.hierarchyForEditors) return;
-
-		const newContainer = createDiv({ cls: CONTAINER_CLASS });
-		mainEl.after(newContainer);
-
-		const root = createRoot(newContainer);
 
 		const sourcePath = leaf.view.file.path;
 		const prefixes = plugin.settings.hierarchyUseObsidianFolder
@@ -41,8 +68,10 @@ export function renderHierarchy(
 			: plugin.settings.hierarchyCleanPathPrefixes;
 		const toEntries = (paths: string[]): HierarchyEntry[] => paths
 			.map((path) => ({ path, title: getDisplayPath(path, prefixes) }))
-			.filter(({ title }) => title.length > 0 && !plugin.settings.hierarchyExcludePaths
-				.some((exclude) => title.startsWith(exclude)));
+			.filter(({ path, title }) => title.length > 0 && !plugin.settings.hierarchyExcludePaths
+				.some((exclude) => matchesExcludedPath(title, exclude)
+					|| matchesExcludedPath(path, exclude)
+					|| matchesExcludedPath(withoutMarkdownExtension(path), exclude)));
 		const parts = sourcePath.split("/");
 		const omittedPrefix = prefixes.find((prefix) => prefix.length > 0
 			&& withoutMarkdownExtension(sourcePath).startsWith(prefix));
@@ -55,12 +84,15 @@ export function renderHierarchy(
 
 		const count = hierarchies.length + children.length;
 
-		root.render(
+		// Reusing the root preserves React's per-editor expansion state.
+		mount.root.render(
 			<Hierarchy
 				hierarchies={hierarchies}
 				children={children}
 				count={count}
 				vaultName={plugin.app.vault.getName()}
+				initialExpanded={expanded.get(view) ?? true}
+				onExpandedChange={(value) => expanded.set(view, value)}
 				onOpen={async (entry, newLeaf) => {
 					try {
 						await openHierarchyEntry(plugin.app, entry, newLeaf);
@@ -71,6 +103,16 @@ export function renderHierarchy(
 			></Hierarchy>,
 		);
 	});
+}
+
+function unmount(mount: MountedHierarchy): void {
+	mount.root.unmount();
+	mount.container.remove();
+}
+
+function matchesExcludedPath(path: string, rule: string): boolean {
+	const exclude = rule.trim().replace(/\/+$/, "");
+	return exclude.length > 0 && (path === exclude || path.startsWith(`${exclude}/`));
 }
 
 function getChildren(plugin: HierarchyPlugin, sourcePath: string): string[] {

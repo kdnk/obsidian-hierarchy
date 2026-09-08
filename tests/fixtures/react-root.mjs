@@ -4,7 +4,10 @@ export const roots = [];
 export function createRoot(container) {
 	const root = {
 		container,
-		render(element) { this.element = element; },
+		renders: 0,
+		unmounts: 0,
+		render(element) { this.element = element; this.renders++; },
+		unmount() { this.unmounts++; },
 	};
 	roots.push(root);
 	return root;

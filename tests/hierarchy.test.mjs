@@ -16,16 +16,28 @@ function setup(t, {
 	const created = [];
 	const errors = [];
 	const parents = [];
+	const containers = [];
+	const callbacks = [];
+	const mainEl = { after(container) {
+		if (!containers.includes(container)) containers.push(container);
+	} };
 	const view = Object.assign(new MarkdownView(), {
 		file: files.get(path),
 		containerEl: {
-			querySelector: () => ({ after() {} }),
-			querySelectorAll: () => [],
+			querySelector: () => mainEl,
+			querySelectorAll: () => [...containers],
+			contains: (container) => containers.includes(container),
 		},
 	});
+	const leaves = [{ view }];
 	const previousCreateDiv = global.createDiv;
-	global.createDiv = () => ({});
+	global.createDiv = () => ({ remove() {
+		const index = containers.indexOf(this);
+		if (index >= 0) containers.splice(index, 1);
+	} });
 	t.after(() => { global.createDiv = previousCreateDiv; });
+	const unload = () => { for (const callback of callbacks.splice(0).reverse()) callback(); };
+	t.after(unload);
 	const plugin = {
 		settings: {
 			hierarchyForEditors: true,
@@ -35,6 +47,7 @@ function setup(t, {
 			...settings,
 		},
 		childrenCache: {},
+		register: (callback) => callbacks.push(callback),
 		handleError: (message, error) => errors.push({ message, error }),
 		app: {
 			vault: {
@@ -57,7 +70,7 @@ function setup(t, {
 			},
 			metadataCache: { getCachedFiles: () => [...files.keys()] },
 			workspace: {
-				getLeavesOfType: () => [{ view }],
+				getLeavesOfType: () => leaves,
 				getLeaf: (newLeaf) => ({ openFile: async (file) => opened.push({ file, newLeaf }) }),
 			},
 		},
@@ -66,7 +79,7 @@ function setup(t, {
 		renderHierarchy(plugin);
 		return roots.at(-1).element;
 	};
-	return { plugin, render, files, opened, created, errors, parents };
+	return { plugin, render, files, opened, created, errors, parents, containers, leaves, view, unload };
 }
 
 test("uses Obsidian's new-note folder for labels while preserving file paths", (t) => {
@@ -190,4 +203,114 @@ test("reports navigation failures without creating a replacement note", async (t
 	await props.onOpen(props.children[0], false);
 	assert.equal(errors[0].error, failure);
 	assert.deepEqual(created, []);
+});
+
+test("excludes only the selected path and its descendants, including a trailing slash", (t) => {
+	for (const exclude of ["Topic/Child", "Topic/Child/"]) {
+		const { render } = setup(t, {
+			paths: ["notes/Topic.md", "notes/Topic/Child.md", "notes/Topic/Child/Leaf.md", "notes/Topic/Childish.md"],
+			settings: { hierarchyExcludePaths: [exclude] },
+		});
+		assert.deepEqual(render().props.children, [{ path: "notes/Topic/Childish.md", title: "Topic/Childish" }]);
+	}
+});
+
+test("applies the same exclusion boundary to ancestor entries", (t) => {
+	const { render } = setup(t, {
+		path: "notes/Topic/Childish/Leaf.md",
+		paths: ["notes/Topic/Childish/Leaf.md"],
+		settings: { hierarchyExcludePaths: ["Topic/Child"] },
+	});
+	assert.deepEqual(render().props.hierarchies, [
+		{ path: "notes/Topic.md", title: "Topic" },
+		{ path: "notes/Topic/Childish.md", title: "Topic/Childish" },
+	]);
+});
+
+test("supports vault-relative exclusions while labels are shortened", (t) => {
+	const { render } = setup(t, { settings: { hierarchyExcludePaths: ["notes/Topic/Child"] } });
+	assert.deepEqual(render().props.children, []);
+});
+
+test("a full Markdown file path excludes that note without excluding its child folder", (t) => {
+	const { render } = setup(t, {
+		paths: ["notes/Topic.md", "notes/Topic/Child.md", "notes/Topic/Child/Leaf.md"],
+		settings: { hierarchyExcludePaths: ["notes/Topic/Child.md"] },
+	});
+	assert.deepEqual(render().props.children, [{ path: "notes/Topic/Child/Leaf.md", title: "Topic/Child/Leaf" }]);
+});
+
+test("retains the mounted UI across refreshes and settings changes", (t) => {
+	const { render, plugin, containers } = setup(t);
+	render();
+	const firstRoot = roots.at(-1);
+	plugin.settings.hierarchyExcludePaths = ["Topic/Child"];
+	render();
+	assert.equal(roots.at(-1), firstRoot);
+	assert.equal(firstRoot.renders, 2);
+	assert.equal(firstRoot.unmounts, 0);
+	assert.deepEqual(containers, [firstRoot.container]);
+});
+
+test("unmounts the root before removing its container when hierarchy is disabled", (t) => {
+	const { render, plugin, containers } = setup(t);
+	render();
+	const root = roots.at(-1);
+	root.unmount = () => {
+		assert.ok(containers.includes(root.container));
+		root.unmounts++;
+	};
+	plugin.settings.hierarchyForEditors = false;
+	renderHierarchy(plugin);
+	assert.equal(root.unmounts, 1);
+	assert.deepEqual(containers, []);
+});
+
+test("cleans up closed leaves and plugin unload without unmounting twice", (t) => {
+	const { render, plugin, leaves, unload, containers } = setup(t);
+	render();
+	const root = roots.at(-1);
+	leaves.length = 0;
+	renderHierarchy(plugin);
+	unload();
+	assert.equal(root.unmounts, 1);
+	assert.deepEqual(containers, []);
+});
+
+test("plugin unload cleans up mounted roots", (t) => {
+	const { render, unload, containers } = setup(t);
+	render();
+	const root = roots.at(-1);
+	unload();
+	assert.equal(root.unmounts, 1);
+	assert.deepEqual(containers, []);
+});
+
+test("cleans up after switching out of editor mode", (t) => {
+	const { render, plugin, view, containers } = setup(t);
+	render();
+	const root = roots.at(-1);
+	view.containerEl.querySelector = () => null;
+	renderHierarchy(plugin);
+	assert.equal(root.unmounts, 1);
+	assert.deepEqual(containers, []);
+});
+
+test("replaces a detached container and unmounts its abandoned root", (t) => {
+	const { render, containers } = setup(t);
+	render();
+	const root = roots.at(-1);
+	containers.length = 0;
+	render();
+	assert.equal(root.unmounts, 1);
+	assert.notEqual(roots.at(-1), root);
+});
+
+test("preserves expansion state if Obsidian replaces the editor DOM", (t) => {
+	const { render, containers } = setup(t);
+	const { props } = render();
+	assert.equal(typeof props.onExpandedChange, "function");
+	props.onExpandedChange(false);
+	containers.length = 0;
+	assert.equal(render().props.initialExpanded, false);
 });

@@ -11,6 +11,7 @@ import { renderHierarchy } from "./hierarchy-view/render-hierarchy";
 export default class HierarchyPlugin extends Plugin {
 	settings: HierarchySettings;
 	childrenCache: Record<string, string[]>;
+	private refreshBacklinks: () => void = () => {};
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -22,10 +23,10 @@ export default class HierarchyPlugin extends Plugin {
 			.then(() => {
 				this.addSettingTab(new HierarchyPluginSettingsTab(this.app, this));
 
-				patchBacklinks(this);
+				this.refreshBacklinks = patchBacklinks(this);
 
 				this.app.workspace.onLayoutReady(() => {
-					patchAllTabs(this);
+					this.refresh();
 
 					this.registerEvent(
 						this.app.workspace.on("file-open", (file) => {
@@ -59,6 +60,7 @@ export default class HierarchyPlugin extends Plugin {
 					this.registerEvent(
 						this.app.workspace.on("layout-change", () => {
 							patchAllTabs(this);
+							this.refreshBacklinks();
 							renderHierarchy(this);
 							this.childrenCache = {};
 						}),
@@ -72,6 +74,7 @@ export default class HierarchyPlugin extends Plugin {
 
 	refresh(): void {
 		patchAllTabs(this);
+		this.refreshBacklinks();
 		renderHierarchy(this);
 	}
 

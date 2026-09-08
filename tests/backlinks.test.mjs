@@ -8,10 +8,15 @@ beforeEach(() => {
 	Notice.messages.length = 0;
 });
 
-function install(t) {
+function install(t, leaves = []) {
 	const plugin = new Component();
 	plugin.settings = { hierarchyForBacklinks: true };
-	patchBacklinks(plugin);
+	plugin.app = {
+		workspace: {
+			getLeavesOfType: (type) => leaves.filter((leaf) => leaf.type === type),
+		},
+	};
+	plugin.refreshBacklinks = patchBacklinks(plugin);
 	t.after(() => plugin.unload());
 	return plugin;
 }
@@ -19,11 +24,18 @@ function install(t) {
 function createRenderer() {
 	// Each test gets its own prototype, as independent renderer classes do.
 	return class BacklinkDom {
+		resultDomLookup = new Map();
+
 		addResult(item) {
+			this.resultDomLookup.set(item?.file, item);
 			return item;
 		}
 		emptyResults() {}
 	};
+}
+
+function createLeaf(dom, type = "markdown") {
+	return { type, view: { _children: [{ backlinkDom: dom }] } };
 }
 
 function createItem() {
@@ -60,6 +72,96 @@ test("formats titles using the current setting and preserves the render result",
 	plugin.settings.hierarchyForBacklinks = false;
 	dom.addResult(item);
 	assert.equal(title.textContent, "Note");
+});
+
+test("refreshes displayed titles immediately when the backlink setting changes", (t) => {
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	const plugin = install(t, [createLeaf(dom)]);
+	plugin.addChild({ backlinkDom: dom });
+	const { item, title } = createItem();
+	dom.addResult(item);
+	plugin.settings.hierarchyForBacklinks = false;
+	plugin.refreshBacklinks?.();
+	assert.equal(title.textContent, "Note");
+	plugin.settings.hierarchyForBacklinks = true;
+	plugin.refreshBacklinks?.();
+	assert.equal(title.textContent, "pages/Topic/Note");
+});
+
+test("updates titles that were rendered before the plugin was enabled", (t) => {
+	for (const type of ["markdown", "backlink"]) {
+		const Renderer = createRenderer();
+		const dom = new Renderer();
+		const { item, title } = createItem();
+		dom.addResult(item);
+		install(t, [createLeaf(dom, type)]);
+		assert.equal(title.textContent, "pages/Topic/Note");
+	}
+});
+
+test("refreshes and restores unlinked mentions that share the backlink renderer", (t) => {
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	const unlinkedDom = new Renderer();
+	const leaf = createLeaf(dom);
+	leaf.view._children[0].unlinkedDom = unlinkedDom;
+	const plugin = install(t, [leaf]);
+	plugin.addChild(leaf.view._children[0]);
+	const { item, title } = createItem();
+	unlinkedDom.addResult(item);
+	assert.equal(title.textContent, "pages/Topic/Note");
+	plugin.settings.hierarchyForBacklinks = false;
+	plugin.refreshBacklinks();
+	assert.equal(title.textContent, "Note");
+	plugin.settings.hierarchyForBacklinks = true;
+	plugin.refreshBacklinks();
+	assert.equal(title.textContent, "pages/Topic/Note");
+	plugin.unload();
+	assert.equal(title.textContent, "Note");
+});
+
+test("unloading restores the existing title and makes stale refresh callbacks harmless", (t) => {
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	const plugin = install(t, [createLeaf(dom)]);
+	plugin.addChild({ backlinkDom: dom });
+	const { item, title } = createItem();
+	title.textContent = "Original display title";
+	dom.addResult(item);
+	plugin.unload();
+	assert.equal(title.textContent, "Original display title");
+	plugin.refreshBacklinks?.();
+	assert.equal(title.textContent, "Original display title");
+	patchBacklinks(plugin);
+	assert.equal(title.textContent, "pages/Topic/Note");
+	plugin.unload();
+	assert.equal(title.textContent, "Original display title");
+});
+
+test("unloading preserves title changes made by another plugin after rendering", (t) => {
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	const plugin = install(t, [createLeaf(dom)]);
+	plugin.addChild({ backlinkDom: dom });
+	const { item, title } = createItem();
+	dom.addResult(item);
+	title.textContent = "Another plugin's title";
+	plugin.unload();
+	assert.equal(title.textContent, "Another plugin's title");
+});
+
+test("refreshing does not touch results removed from the renderer", (t) => {
+	const Renderer = createRenderer();
+	const dom = new Renderer();
+	const plugin = install(t, [createLeaf(dom)]);
+	plugin.addChild({ backlinkDom: dom });
+	const { item, writes } = createItem();
+	dom.addResult(item);
+	dom.resultDomLookup.clear();
+	plugin.settings.hierarchyForBacklinks = false;
+	plugin.refreshBacklinks?.();
+	assert.deepEqual(writes, ["pages/Topic/Note"]);
 });
 
 test("writes a title only once when multiple panes share a renderer prototype", (t) => {

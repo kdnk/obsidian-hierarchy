@@ -77,7 +77,7 @@ export class HierarchyPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Hierarchy Exclude Paths")
 			.setDesc(
-				"Enter paths (one per line) that should be excluded from the hierarchy view.",
+				"Exclude paths (one per line), using full vault paths or displayed hierarchy paths. Only the exact path and its descendants are excluded: 'journals' keeps 'journals-archive' visible.",
 			)
 			.addTextArea((text) => {
 				text
